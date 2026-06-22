@@ -7,6 +7,8 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; }
         .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 900px; box-sizing: border-box; margin-bottom: 20px; position: relative; }
+        .logo-container { text-align: center; margin-bottom: 15px; }
+        .logo-img { max-width: 150px; height: auto; object-fit: contain; }
         h2 { margin-top: 0; color: #e65100; text-align: center; font-size: 22px; }
         h3 { margin-top: 0; color: #333; }
         .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
@@ -58,6 +60,9 @@
 <body>
 
 <div class="container" id="login-screen" style="max-width: 450px;">
+    <div class="logo-container">
+        <img src="https://i.imgur.com/q2QNNcc.png" alt="FIRE PLUS Logo" class="logo-img">
+    </div>
     <h2>FIRE PLUS - Login Admin</h2>
     <p class="subtitle">Autentique-se para gerenciar os dispositivos</p>
     <form id="login-form">
@@ -76,9 +81,12 @@
 
 <div class="container hidden" id="admin-screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div>
-            <h2 style="text-align: left; margin: 0;">FIRE PLUS - Controle de Dispositivos</h2>
-            <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie os acessos salvos na coleção <strong>devices</strong></p>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="https://i.imgur.com/q2QNNcc.png" alt="FIRE PLUS Logo" style="max-height: 50px; width: auto;">
+            <div>
+                <h2 style="text-align: left; margin: 0;">FIRE PLUS - Controle de Dispositivos</h2>
+                <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie os acessos salvos na coleção <strong>devices</strong></p>
+            </div>
         </div>
         <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
     </div>
@@ -253,7 +261,7 @@
         document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDeleteClick));
     }
 
-    // Ação do Botão "Editar" da Tabela (Abre o Pop-up configurado)
+    // Ação do Botão "Editar" da Tabela
     function handleEditClick(e) {
         const idToEdit = e.target.getAttribute('data-id');
         const device = localDevices.find(d => d.id === idToEdit);
@@ -310,7 +318,7 @@
 
         statusMsg.textContent = "Processando requisição...";
         statusMsg.className = "";
-        formModal.classList.add('hidden'); // Fecha a janela para mostrar o progresso na lista
+        formModal.classList.add('hidden'); // Fecha o modal
 
         try {
             const docRef = doc(db, "devices", deviceId);
@@ -325,13 +333,13 @@
                 statusMsg.className = "success";
                 renderTable();
             } else {
-                // Modo Cadastro Novo (Com verificação)
+                // Modo Cadastro Novo
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() || localDevices.some(d => d.id === deviceId)) {
                     statusMsg.textContent = `Erro: O ID "${deviceId}" já está cadastrado!`;
                     statusMsg.className = "error";
-                    formModal.classList.remove('hidden'); // Reabre o pop-up caso dê erro
+                    formModal.classList.remove('hidden'); // Reabre se falhar
                     return;
                 }
 
