@@ -3,57 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin Seguro - Firestore</title>
+    <title>Painel Admin - FIRE PLUS Streaming</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { margin-top: 0; color: #333; text-align: center; }
+        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { margin-top: 0; color: #e65100; text-align: center; font-size: 22px; }
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 6px; color: #666; font-weight: 600; }
-        input[type="text"], input[type="email"], input[type="password"], input[type="url"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        button { width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-        button:hover { background-color: #0056b3; }
-        .btn-logout { background-color: #6c757d; margin-top: 10px; }
+        label { display: block; margin-bottom: 6px; color: #444; font-weight: 600; }
+        input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #e65100; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #c64000; }
+        .btn-logout { background-color: #6c757d; margin-top: 15px; }
         .btn-logout:hover { background-color: #5a6268; }
         #status-message, #login-message { margin-top: 15px; text-align: center; font-weight: bold; }
         .success { color: #28a745; }
         .error { color: #dc3545; }
-        /* Controla a exibição das telas */
         .hidden { display: none; }
+        .subtitle { text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="container" id="login-screen">
-    <h2>Login Administrativo</h2>
+    <h2>FIRE PLUS - Login Admin</h2>
+    <p class="subtitle">Autentique-se para gerenciar os dispositivos</p>
     <form id="login-form">
         <div class="form-group">
             <label for="login-email">E-mail:</label>
-            <input type="email" id="login-email" required>
+            <input type="email" id="login-email" placeholder="seu-email@provedor.com" required>
         </div>
         <div class="form-group">
             <label for="login-password">Senha:</label>
-            <input type="password" id="login-password" required>
+            <input type="password" id="login-password" placeholder="Sua senha" required>
         </div>
-        <button type="submit">Entrar</button>
+        <button type="submit">Entrar no Painel</button>
     </form>
     <div id="login-message"></div>
 </div>
 
 <div class="container hidden" id="admin-screen">
-    <h2>Painel Administrativo</h2>
+    <h2>FIRE PLUS - Cadastro de Dispositivo</h2>
+    <p class="subtitle">Gerenciamento da coleção <strong>devices</strong></p>
+    
     <form id="admin-form">
         <div class="form-group">
-            <label for="doc-id">ID do Registro:</label>
-            <input type="text" id="doc-id" placeholder="Ex: link_01" required>
+            <label for="doc-id">ID do Dispositivo:</label>
+            <input type="text" id="doc-id" placeholder="Ex: CDE58228" required>
         </div>
         <div class="form-group">
-            <label for="redirect-url">URL de Destino:</label>
-            <input type="url" id="redirect-url" placeholder="https://exemplo.com" required>
+            <label for="url-m3u">URL (url_m3u):</label>
+            <input type="text" id="url-m3u" placeholder="Cole aqui a URL completa do stream" required>
         </div>
-        <button type="submit">Cadastrar no Firestore</button>
+        <button type="submit">Atualizar / Criar no Firestore</button>
     </form>
-    <button class="btn-logout" id="btn-logout">Sair do Painel</button>
+    
+    <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
     <div id="status-message"></div>
 </div>
 
@@ -62,7 +66,7 @@
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // 🔥 VEJA NO SEU CONSOLE E COLE AS SUAS CONFIGURAÇÕES AQUI
+    // ⚠️ ATENÇÃO: COLE AQUI AS SUAS CREDENCIAIS DO FIREBASE
     const firebaseConfig = {
   apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
   authDomain: "fire-plus-streaming-app.firebaseapp.com",
@@ -72,12 +76,12 @@
   appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
 };
 
-    // Inicialização
+    // Inicializando Firebase e Serviços
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Elementos do DOM
+    // Mapeamento de Elementos
     const loginScreen = document.getElementById('login-screen');
     const adminScreen = document.getElementById('admin-screen');
     const loginForm = document.getElementById('login-form');
@@ -86,20 +90,18 @@
     const statusMsg = document.getElementById('status-message');
     const btnLogout = document.getElementById('btn-logout');
 
-    // Observador: Monitora se o usuário está logado ou não
+    // Monitor do estado de autenticação
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Usuário logado: mostra painel, esconde login
             loginScreen.classList.add('hidden');
             adminScreen.classList.remove('hidden');
         } else {
-            // Usuário deslogado: mostra login, esconde painel
             loginScreen.classList.remove('hidden');
             adminScreen.classList.add('hidden');
         }
     });
 
-    // Ação de Login
+    // Evento de Login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
@@ -113,39 +115,41 @@
             loginForm.reset();
         } catch (error) {
             console.error(error);
-            loginMsg.textContent = "Acesso negado. Verifique os dados.";
+            loginMsg.textContent = "Erro no login. Verifique e-mail e senha.";
             loginMsg.className = "error";
         }
     });
 
-    // Ação de Logout (Sair)
+    // Evento de Logout
     btnLogout.addEventListener('click', () => {
         signOut(auth);
     });
 
-    // Ação de Cadastro no Firestore
+    // Ação Principal: Gravar na coleção "devices"
     adminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const customId = document.getElementById('doc-id').value.trim();
-        const urlValue = document.getElementById('redirect-url').value.trim();
+        
+        const deviceId = document.getElementById('doc-id').value.trim();
+        const urlM3uValue = document.getElementById('url-m3u').value.trim();
 
-        statusMsg.textContent = "Salvando...";
+        statusMsg.textContent = "Enviando para o banco de dados...";
         statusMsg.className = "";
 
         try {
-            // Salva na coleção 'links' usando o ID digitado como identificador do documento
-            await setDoc(doc(db, "links", customId), {
-                id: customId,
-                url: urlValue,
-                criadoEm: new Date()
+            // Referência exata: db -> Coleção "devices" -> Documento com o ID digitado
+            await setDoc(doc(db, "devices", deviceId), {
+                url_m3u: urlM3uValue
             });
 
-            statusMsg.textContent = "Sucesso! Link registrado.";
+            statusMsg.textContent = "Sucesso! Dispositivo salvo.";
             statusMsg.className = "success";
-            adminForm.reset();
+            
+            // Limpa apenas o campo da URL se quiser cadastrar vários em seguida mantendo foco
+            document.getElementById('url-m3u').value = "";
+            document.getElementById('doc-id').value = "";
         } catch (error) {
             console.error(error);
-            statusMsg.textContent = "Erro ao salvar. Verifique as permissões.";
+            statusMsg.textContent = "Erro ao gravar dados. Verifique suas regras do Firestore.";
             statusMsg.className = "error";
         }
     });
