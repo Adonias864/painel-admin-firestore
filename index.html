@@ -5,68 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - FIRE PLUS Streaming</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; }
+        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 900px; box-sizing: border-box; margin-bottom: 20px; position: relative; }
         h2 { margin-top: 0; color: #e65100; text-align: center; font-size: 22px; }
-        .form-group { margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #333; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
         label { display: block; margin-bottom: 6px; color: #444; font-weight: 600; }
         input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        button { width: 100%; padding: 12px; background-color: #e65100; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-        button:hover { background-color: #c64000; }
-        .btn-logout { background-color: #6c757d; margin-top: 15px; }
+        input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+        
+        /* Botões Gerais */
+        button { padding: 12px 20px; border: none; color: white; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .btn-main { background-color: #e65100; width: 100%; font-size: 16px; }
+        .btn-main:hover { background-color: #c64000; }
+        .btn-add-client { background-color: #28a745; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-add-client:hover { background-color: #218838; }
+        .btn-logout { background-color: #6c757d; }
         .btn-logout:hover { background-color: #5a6268; }
+        .btn-cancel { background-color: #6c757d; width: 100%; }
+        .btn-cancel:hover { background-color: #5a6268; }
+        
         #status-message, #login-message { margin-top: 15px; text-align: center; font-weight: bold; }
         .success { color: #28a745; }
         .error { color: #dc3545; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .subtitle { text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px; font-size: 14px; }
+        
+        /* Estilos da Janela Pop-up (Modal) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 100%; max-width: 550px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        
+        /* Estilos da Tabela */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #333; }
+        .actions-btn { display: flex; gap: 5px; }
+        .btn-table { padding: 6px 10px; font-size: 12px; font-weight: normal; }
+        .btn-edit { background-color: #ffc107; color: #212529; }
+        .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-delete:hover { background-color: #bd2130; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
 
-<div class="container" id="login-screen">
+<div class="container" id="login-screen" style="max-width: 450px;">
     <h2>FIRE PLUS - Login Admin</h2>
     <p class="subtitle">Autentique-se para gerenciar os dispositivos</p>
     <form id="login-form">
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 20px;">
             <label for="login-email">E-mail:</label>
             <input type="email" id="login-email" placeholder="seu-email@provedor.com" required>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 20px;">
             <label for="login-password">Senha:</label>
             <input type="password" id="login-password" placeholder="Sua senha" required>
         </div>
-        <button type="submit">Entrar no Painel</button>
+        <button type="submit" class="btn-main">Entrar no Painel</button>
     </form>
     <div id="login-message"></div>
 </div>
 
 <div class="container hidden" id="admin-screen">
-    <h2>FIRE PLUS - Cadastro de Dispositivo</h2>
-    <p class="subtitle">Gerenciamento da coleção <strong>devices</strong></p>
-    
-    <form id="admin-form">
-        <div class="form-group">
-            <label for="doc-id">ID do Dispositivo:</label>
-            <input type="text" id="doc-id" placeholder="Ex: CDE58228" required>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h2 style="text-align: left; margin: 0;">FIRE PLUS - Controle de Dispositivos</h2>
+            <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie os acessos salvos na coleção <strong>devices</strong></p>
         </div>
-        <div class="form-group">
-            <label for="url-m3u">URL (url_m3u):</label>
-            <input type="text" id="url-m3u" placeholder="Cole aqui a URL completa do stream" required>
-        </div>
-        <button type="submit">Atualizar / Criar no Firestore</button>
-    </form>
-    
-    <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
+        <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <h3>Lista de IDs Cadastrados</h3>
+        <button class="btn-add-client" id="btn-open-modal">📑 Adicionar Cliente</button>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome (Dono)</th>
+                    <th>ID do Dispositivo</th>
+                    <th>URL (url_m3u)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="devices-table-body">
+                </tbody>
+        </table>
+    </div>
     <div id="status-message"></div>
+</div>
+
+<div class="modal-overlay hidden" id="form-modal">
+    <div class="modal-content">
+        <h2 id="modal-title" style="text-align: left; margin-bottom: 5px;">Adicionar Novo Cliente</h2>
+        <p class="subtitle" style="text-align: left; margin-bottom: 20px;">Preencha os dados do dispositivo abaixo.</p>
+        
+        <form id="admin-form">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="doc-name">Nome do Cliente (Controle no Painel):</label>
+                <input type="text" id="doc-name" placeholder="Ex: João Silva" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="doc-id">ID do Dispositivo:</label>
+                <input type="text" id="doc-id" placeholder="Ex: CDE58228" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="url-m3u">URL (url_m3u — Salva no Firestore):</label>
+                <input type="text" id="url-m3u" placeholder="Cole aqui a URL completa do stream" required>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn-main" id="btn-submit" style="margin: 0;">Salvar Dispositivo</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ ATENÇÃO: SUBSTITUA APENAS AS STRINGS ABAIXO PELAS SUAS CREDENCIAIS DO FIREBASE
+    // ⚠️ ATENÇÃO: COLOQUE AQUI AS SUAS CREDENCIAIS DO FIREBASE
     const firebaseConfig = {
   apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
   authDomain: "fire-plus-streaming-app.firebaseapp.com",
@@ -76,12 +149,16 @@
   appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
 };
 
-    // Inicializando Firebase e Serviços
+    // Inicializando Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Mapeamento de Elementos
+    // Variáveis de Controle
+    let isEditing = false;
+    let localDevices = JSON.parse(localStorage.getItem('fireplus_devices')) || [];
+
+    // Mapeamento do DOM
     const loginScreen = document.getElementById('login-screen');
     const adminScreen = document.getElementById('admin-screen');
     const loginForm = document.getElementById('login-form');
@@ -89,15 +166,29 @@
     const loginMsg = document.getElementById('login-message');
     const statusMsg = document.getElementById('status-message');
     const btnLogout = document.getElementById('btn-logout');
+    const tableBody = document.getElementById('devices-table-body');
+    
+    // Elementos do Modal Pop-up
+    const formModal = document.getElementById('form-modal');
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const btnSubmit = document.getElementById('btn-submit');
 
-    // Monitor do estado de autenticação
+    const inputName = document.getElementById('doc-name');
+    const inputId = document.getElementById('doc-id');
+    const inputUrl = document.getElementById('url-m3u');
+
+    // Monitor de Autenticação
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginScreen.classList.add('hidden');
             adminScreen.classList.remove('hidden');
+            renderTable();
         } else {
             loginScreen.classList.remove('hidden');
             adminScreen.classList.add('hidden');
+            formModal.classList.add('hidden');
         }
     });
 
@@ -106,70 +197,157 @@
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
-
         loginMsg.textContent = "Autenticando...";
         loginMsg.className = "";
-
         try {
             await signInWithEmailAndPassword(auth, email, password);
             loginForm.reset();
         } catch (error) {
-            console.error(error);
             loginMsg.textContent = "Erro no login. Verifique e-mail e senha.";
             loginMsg.className = "error";
         }
     });
 
     // Evento de Logout
-    btnLogout.addEventListener('click', () => {
-        signOut(auth);
+    btnLogout.addEventListener('click', () => { signOut(auth); });
+
+    // Funções de abrir e fechar Pop-up (Modal)
+    btnOpenModal.addEventListener('click', () => {
+        isEditing = false;
+        adminForm.reset();
+        inputId.disabled = false;
+        modalTitle.textContent = "Adicionar Novo Cliente";
+        btnSubmit.textContent = "Salvar Dispositivo";
+        formModal.classList.remove('hidden');
     });
 
-    // Ação Principal: Verificar duplicidade, validar campos vazios e Gravar na coleção "devices"
-    adminForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const deviceId = document.getElementById('doc-id').value.trim();
-        const urlM3uValue = document.getElementById('url-m3u').value.trim();
+    btnCloseModal.addEventListener('click', () => {
+        formModal.classList.add('hidden');
+        adminForm.reset();
+        inputId.disabled = false;
+    });
 
-        statusMsg.textContent = "Verificando disponibilidade do ID...";
-        statusMsg.className = "";
-
-        // Trava extra para impedir envios vazios ou apenas com espaços
-        if (!deviceId || !urlM3uValue) {
-            statusMsg.textContent = "Erro: Ambos os campos precisam ser preenchidos!";
-            statusMsg.className = "error";
+    // Renderizar a Tabela Baseada no LocalStorage
+    function renderTable() {
+        tableBody.innerHTML = "";
+        if (localDevices.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum dispositivo cadastrado localmente.</td></tr>`;
             return;
         }
 
+        localDevices.forEach((device) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${device.name}</strong></td>
+                <td><code>${device.id}</code></td>
+                <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${device.url}</td>
+                <td class="actions-btn">
+                    <button class="btn-table btn-edit" data-id="${device.id}">Editar</button>
+                    <button class="btn-table btn-delete" data-id="${device.id}">Excluir</button>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEditClick));
+        document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDeleteClick));
+    }
+
+    // Ação do Botão "Editar" da Tabela (Abre o Pop-up configurado)
+    function handleEditClick(e) {
+        const idToEdit = e.target.getAttribute('data-id');
+        const device = localDevices.find(d => d.id === idToEdit);
+        
+        if (device) {
+            isEditing = true;
+            inputName.value = device.name;
+            inputId.value = device.id;
+            inputId.disabled = true; // Trava o ID na edição
+            inputUrl.value = device.url;
+            
+            modalTitle.textContent = "Editar Cliente: " + idToEdit;
+            btnSubmit.textContent = "Atualizar Alterações";
+            
+            formModal.classList.remove('hidden'); // Abre o Pop-up
+        }
+    }
+
+    // Ação do Botão "Excluir"
+    async function handleDeleteClick(e) {
+        const idToDelete = e.target.getAttribute('data-id');
+        if (!confirm(`Tem certeza que deseja excluir o ID "${idToDelete}" do Firestore e do Painel?`)) return;
+
+        statusMsg.textContent = "Removendo do Firestore...";
+        statusMsg.className = "";
+
         try {
-            const docRef = doc(db, "devices", deviceId);
-            const docSnap = await getDoc(docRef);
+            await deleteDoc(doc(db, "devices", idToDelete));
+            localDevices = localDevices.filter(d => d.id !== idToDelete);
+            localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
 
-            // Se o ID já existir, impede o salvamento
-            if (docSnap.exists()) {
-                statusMsg.textContent = `Erro: O ID "${deviceId}" já está cadastrado no sistema!`;
-                statusMsg.className = "error";
-                return;
-            }
-
-            // Se estiver tudo certo, salva
-            statusMsg.textContent = "ID disponível. Salvando dados...";
-            
-            await setDoc(docRef, {
-                url_m3u: urlM3uValue
-            });
-
-            statusMsg.textContent = "Sucesso! Dispositivo salvo.";
+            statusMsg.textContent = "Dispositivo excluído com sucesso!";
             statusMsg.className = "success";
-            
-            // Limpa os campos
-            document.getElementById('url-m3u').value = "";
-            document.getElementById('doc-id').value = "";
-            
+            renderTable();
         } catch (error) {
             console.error(error);
-            statusMsg.textContent = "Erro ao processar dados. Verifique o console.";
+            statusMsg.textContent = "Erro ao excluir do Firestore.";
+            statusMsg.className = "error";
+        }
+    }
+
+    // Salvar ou Atualizar dados via Modal
+    adminForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const nameValue = inputName.value.trim();
+        const deviceId = inputId.value.trim();
+        const urlM3uValue = inputUrl.value.trim();
+
+        if (!nameValue || !deviceId || !urlM3uValue) {
+            alert("Erro: Preencha todos os campos corretamente.");
+            return;
+        }
+
+        statusMsg.textContent = "Processando requisição...";
+        statusMsg.className = "";
+        formModal.classList.add('hidden'); // Fecha a janela para mostrar o progresso na lista
+
+        try {
+            const docRef = doc(db, "devices", deviceId);
+
+            if (isEditing) {
+                // Modo Edição
+                await setDoc(docRef, { url_m3u: urlM3uValue });
+                localDevices = localDevices.map(d => d.id === deviceId ? { name: nameValue, id: deviceId, url: urlM3uValue } : d);
+                localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
+
+                statusMsg.textContent = "Dispositivo atualizado com sucesso!";
+                statusMsg.className = "success";
+                renderTable();
+            } else {
+                // Modo Cadastro Novo (Com verificação)
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() || localDevices.some(d => d.id === deviceId)) {
+                    statusMsg.textContent = `Erro: O ID "${deviceId}" já está cadastrado!`;
+                    statusMsg.className = "error";
+                    formModal.classList.remove('hidden'); // Reabre o pop-up caso dê erro
+                    return;
+                }
+
+                await setDoc(docRef, { url_m3u: urlM3uValue });
+                localDevices.push({ name: nameValue, id: deviceId, url: urlM3uValue });
+                localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
+
+                statusMsg.textContent = "Sucesso! Novo dispositivo cadastrado.";
+                statusMsg.className = "success";
+                renderTable();
+            }
+            adminForm.reset();
+            inputId.disabled = false;
+        } catch (error) {
+            console.error(error);
+            statusMsg.textContent = "Erro na operação com o banco de dados.";
             statusMsg.className = "error";
         }
     });
