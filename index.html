@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin Seguro - Firestore</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { margin-top: 0; color: #333; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 6px; color: #666; font-weight: 600; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="url"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #0056b3; }
+        .btn-logout { background-color: #6c757d; margin-top: 10px; }
+        .btn-logout:hover { background-color: #5a6268; }
+        #status-message, #login-message { margin-top: 15px; text-align: center; font-weight: bold; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        /* Controla a exibição das telas */
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="login-screen">
+    <h2>Login Administrativo</h2>
+    <form id="login-form">
+        <div class="form-group">
+            <label for="login-email">E-mail:</label>
+            <input type="email" id="login-email" required>
+        </div>
+        <div class="form-group">
+            <label for="login-password">Senha:</label>
+            <input type="password" id="login-password" required>
+        </div>
+        <button type="submit">Entrar</button>
+    </form>
+    <div id="login-message"></div>
+</div>
+
+<div class="container hidden" id="admin-screen">
+    <h2>Painel Administrativo</h2>
+    <form id="admin-form">
+        <div class="form-group">
+            <label for="doc-id">ID do Registro:</label>
+            <input type="text" id="doc-id" placeholder="Ex: link_01" required>
+        </div>
+        <div class="form-group">
+            <label for="redirect-url">URL de Destino:</label>
+            <input type="url" id="redirect-url" placeholder="https://exemplo.com" required>
+        </div>
+        <button type="submit">Cadastrar no Firestore</button>
+    </form>
+    <button class="btn-logout" id="btn-logout">Sair do Painel</button>
+    <div id="status-message"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // 🔥 VEJA NO SEU CONSOLE E COLE AS SUAS CONFIGURAÇÕES AQUI
+    const firebaseConfig = {
+  apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
+  authDomain: "fire-plus-streaming-app.firebaseapp.com",
+  projectId: "fire-plus-streaming-app",
+  storageBucket: "fire-plus-streaming-app.firebasestorage.app",
+  messagingSenderId: "188055190455",
+  appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
+};
+
+    // Inicialização
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Elementos do DOM
+    const loginScreen = document.getElementById('login-screen');
+    const adminScreen = document.getElementById('admin-screen');
+    const loginForm = document.getElementById('login-form');
+    const adminForm = document.getElementById('admin-form');
+    const loginMsg = document.getElementById('login-message');
+    const statusMsg = document.getElementById('status-message');
+    const btnLogout = document.getElementById('btn-logout');
+
+    // Observador: Monitora se o usuário está logado ou não
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Usuário logado: mostra painel, esconde login
+            loginScreen.classList.add('hidden');
+            adminScreen.classList.remove('hidden');
+        } else {
+            // Usuário deslogado: mostra login, esconde painel
+            loginScreen.classList.remove('hidden');
+            adminScreen.classList.add('hidden');
+        }
+    });
+
+    // Ação de Login
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        loginMsg.textContent = "Autenticando...";
+        loginMsg.className = "";
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            loginForm.reset();
+        } catch (error) {
+            console.error(error);
+            loginMsg.textContent = "Acesso negado. Verifique os dados.";
+            loginMsg.className = "error";
+        }
+    });
+
+    // Ação de Logout (Sair)
+    btnLogout.addEventListener('click', () => {
+        signOut(auth);
+    });
+
+    // Ação de Cadastro no Firestore
+    adminForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const customId = document.getElementById('doc-id').value.trim();
+        const urlValue = document.getElementById('redirect-url').value.trim();
+
+        statusMsg.textContent = "Salvando...";
+        statusMsg.className = "";
+
+        try {
+            // Salva na coleção 'links' usando o ID digitado como identificador do documento
+            await setDoc(doc(db, "links", customId), {
+                id: customId,
+                url: urlValue,
+                criadoEm: new Date()
+            });
+
+            statusMsg.textContent = "Sucesso! Link registrado.";
+            statusMsg.className = "success";
+            adminForm.reset();
+        } catch (error) {
+            console.error(error);
+            statusMsg.textContent = "Erro ao salvar. Verifique as permissões.";
+            statusMsg.className = "error";
+        }
+    });
+</script>
+
+</body>
+</html>
