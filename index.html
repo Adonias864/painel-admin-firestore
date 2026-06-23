@@ -38,7 +38,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
             width: 100%;
-            max-width: 450px;
+            max-width: 550px;
             border: 1px solid var(--border);
         }
 
@@ -105,6 +105,12 @@
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
         }
 
+        input:disabled {
+            background-color: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
         .actions {
             display: flex;
             gap: 12px;
@@ -154,12 +160,81 @@
         #message.success { display: block; background: rgba(16, 185, 129, 0.1); color: var(--success); }
         #message.error { display: block; background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
-        /* Loading */
-        #loadingSection {
-            text-align: center;
-            padding: 40px 0;
+        /* Lista de Usuários */
+        .users-section {
+            margin-top: 40px;
+            border-top: 1px solid var(--border);
+            padding-top: 25px;
         }
-        
+
+        .users-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #e2e8f0;
+        }
+
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 5px;
+        }
+
+        .user-card {
+            background: #0c111d;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-id {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .user-details {
+            font-size: 12px;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: #2e3b56;
+            border: none;
+            color: var(--text-color);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover { background: #3d4f74; }
+        .btn-edit:hover { color: var(--primary); }
+        .btn-delete:hover { color: var(--error); }
+
+        /* Loading */
+        #loadingSection { text-align: center; padding: 40px 0; }
         .spinner {
             border: 4px solid rgba(255, 255, 255, 0.1);
             width: 40px;
@@ -169,12 +244,7 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 20px auto;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -215,7 +285,7 @@
     <div id="painelSection" class="hidden">
         <div class="header">
             <h2>FIRE PLUS Streaming</h2>
-            <p>Vincular ID do App ao Xtream Codes</p>
+            <p id="formSubtitle">Vincular ID do App ao Xtream Codes</p>
         </div>
 
         <form id="cadastroForm">
@@ -255,22 +325,27 @@
                 <button type="button" class="btn-logout" id="logoutBtn" title="Fazer Logout">
                     <i class="fa-solid fa-sign-out-alt"></i> Sair
                 </button>
-                <button type="submit">
+                <button type="submit" id="submitBtn">
                     <i class="fa-solid fa-bolt"></i> Ativar App
                 </button>
             </div>
         </form>
-    </div>
 
-    <div id="message"></div>
+        <div id="message"></div>
+
+        <div class="users-section">
+            <h3>Dispositivos Ativados</h3>
+            <div class="user-list" id="userListContainer">
+                </div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // Suas credenciais integradas
     const firebaseConfig = {
         apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
         authDomain: "fire-plus-streaming-app.firebaseapp.com",
@@ -291,6 +366,27 @@
     const cadastroForm = document.getElementById('cadastroForm');
     const messageDiv = document.getElementById('message');
     const logoutBtn = document.getElementById('logoutBtn');
+    const userListContainer = document.getElementById('userListContainer');
+    const submitBtn = document.getElementById('submitBtn');
+    const formSubtitle = document.getElementById('formSubtitle');
+    const docIdInput = document.getElementById('docId');
+
+    let isEditing = false;
+    let unsubscribeSnapshot = null;
+
+    // Função auxiliar para exibir mensagem temporária
+    function showTimedMessage(text, type) {
+        messageDiv.style.display = "block";
+        messageDiv.className = type;
+        messageDiv.textContent = text;
+        
+        // Esconde após 4 segundos
+        setTimeout(() => {
+            messageDiv.style.display = "none";
+            messageDiv.className = "";
+            messageDiv.textContent = "";
+        }, 4000);
+    }
 
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
@@ -298,12 +394,15 @@
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
+            listenToUsers(); // Ativa a listagem em tempo real
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
         }
     });
 
+    // Login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -318,22 +417,18 @@
             loginForm.reset();
             messageDiv.style.display = "none";
         } catch (error) {
-            messageDiv.textContent = "E-mail ou senha incorretos.";
-            messageDiv.className = "error";
+            showTimedMessage("E-mail ou senha incorretos.", "error");
         }
     });
 
+    // Enviar (Salvar ou Editar)
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const docId = document.getElementById('docId').value.trim();
+        const docId = docIdInput.value.trim();
         const dnsValue = document.getElementById('dnsValue').value.trim();
         const userValue = document.getElementById('userValue').value.trim();
         const passValue = document.getElementById('passValue').value.trim();
         
-        messageDiv.style.display = "block";
-        messageDiv.className = "";
-        messageDiv.textContent = "Vinculando aparelho...";
-
         try {
             await setDoc(doc(db, "clientes", docId), {
                 id: docId,
@@ -343,22 +438,99 @@
                 vinculadoEm: new Date()
             });
 
-            messageDiv.textContent = "Aparelho ativado com sucesso!";
-            messageDiv.className = "success";
-            cadastroForm.reset();
+            if (isEditing) {
+                showTimedMessage("Cadastro atualizado com sucesso!", "success");
+                resetForm();
+            } else {
+                showTimedMessage("Aparelho ativado com sucesso!", "success");
+                cadastroForm.reset();
+            }
         } catch (error) {
-            messageDiv.textContent = "Erro ao salvar os dados.";
-            messageDiv.className = "error";
+            showTimedMessage("Erro ao salvar os dados.", "error");
         }
     });
 
+    // Escuta em tempo real a coleção de usuários
+    function listenToUsers() {
+        unsubscribeSnapshot = onSnapshot(collection(db, "clientes"), (snapshot) => {
+            userListContainer.innerHTML = "";
+            
+            if(snapshot.empty) {
+                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center;">Nenhum dispositivo ativado ainda.</p>`;
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                const card = document.createElement('div');
+                card.className = "user-card";
+                card.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-id"><i class="fa-solid fa-tv"></i> ID: ${data.id}</span>
+                        <span class="user-details">User: ${data.username} | Server: ${data.dns}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-icon btn-edit" title="Editar dados" data-id="${data.id}" data-dns="${data.dns}" data-user="${data.username}" data-pass="${data.password}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" title="Excluir" data-id="${data.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                userListContainer.appendChild(card);
+            });
+
+            // Configura os botões de ação dinâmica
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const b = e.currentTarget;
+                    prepararEdicao(b.dataset.id, b.dataset.dns, b.dataset.user, b.dataset.pass);
+                });
+            });
+
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    if(confirm(`Deseja mesmo remover o acesso do ID ${id}?`)) {
+                        deleteDoc(doc(db, "clientes", id));
+                        showTimedMessage("Acesso removido com sucesso.", "success");
+                    }
+                });
+            });
+        });
+    }
+
+    // Prepara os campos para edição bloqueando a alteração do ID
+    function prepararEdicao(id, dns, user, pass) {
+        isEditing = true;
+        docIdInput.value = id;
+        docIdInput.disabled = true; // Impede alterar o ID do aparelho
+        document.getElementById('dnsValue').value = dns;
+        document.getElementById('userValue').value = user;
+        document.getElementById('passValue').value = pass;
+
+        formSubtitle.textContent = "Editando credenciais do ID: " + id;
+        submitBtn.innerHTML = `<i class="fa-solid fa-save"></i> Salvar Alterações`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        isEditing = false;
+        cadastroForm.reset();
+        docIdInput.disabled = false;
+        formSubtitle.textContent = "Vincular ID do App ao Xtream Codes";
+        submitBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> Ativar App`;
+    }
+
+    // Logout
     logoutBtn.addEventListener('click', async () => {
         try {
             loadingSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
-            
+            resetForm();
             await signOut(auth);
-            cadastroForm.reset();
         } catch (error) {
             loadingSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
