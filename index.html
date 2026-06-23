@@ -34,24 +34,24 @@
 
         .container {
             background: var(--card-bg);
-            padding: 40px 30px;
+            padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
             width: 100%;
-            max-width: 550px;
+            max-width: 600px;
             border: 1px solid var(--border);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            position: relative;
         }
 
         .header h2 {
             margin: 0;
             font-size: 26px;
             font-weight: 800;
-            letter-spacing: 0.5px;
             background: linear-gradient(to right, var(--primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -64,12 +64,12 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 14px;
             font-weight: 500;
             color: #e2e8f0;
@@ -96,7 +96,6 @@
             color: var(--text-color);
             font-size: 15px;
             box-sizing: border-box;
-            transition: border-color 0.2s;
         }
 
         input:focus {
@@ -111,19 +110,20 @@
             cursor: not-allowed;
         }
 
-        .actions {
+        .top-bar {
             display: flex;
-            gap: 12px;
-            margin-top: 25px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
         }
 
         button {
-            flex: 2;
-            padding: 12px;
+            padding: 12px 20px;
             background: linear-gradient(135deg, var(--primary), var(--accent));
             border: none;
             color: #0c111d;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
@@ -131,118 +131,107 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
-            transition: opacity 0.2s;
         }
 
         button:hover { opacity: 0.9; }
 
         button.btn-logout {
-            flex: 1;
+            background: #2e3b56;
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            padding: 12px;
+        }
+        button.btn-logout:hover { background: #3d4f74; color: var(--error); }
+
+        button.btn-secondary {
             background: #2e3b56;
             color: var(--text-color);
             border: 1px solid var(--border);
         }
 
-        button.btn-logout:hover {
-            background: #3d4f74;
-            color: var(--error);
+        /* Estilos do Modal (Popup) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(12, 17, 29, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
         }
 
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: none; border: none;
+            color: var(--text-muted); cursor: pointer;
+            font-size: 20px; padding: 5px;
+        }
+        .modal-close:hover { color: var(--error); }
+
         #message {
-            margin-top: 20px;
+            margin-top: 15px;
             text-align: center;
             font-size: 14px;
             padding: 10px;
             border-radius: 6px;
             display: none;
         }
-
         #message.success { display: block; background: rgba(16, 185, 129, 0.1); color: var(--success); }
         #message.error { display: block; background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
-        /* Lista de Usuários */
-        .users-section {
-            margin-top: 40px;
-            border-top: 1px solid var(--border);
-            padding-top: 25px;
-        }
-
-        .users-section h3 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            color: #e2e8f0;
-        }
-
+        /* Lista de Dispositivos */
         .user-list {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            padding-right: 5px;
         }
 
         .user-card {
             background: #0c111d;
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px 15px;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .user-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .user-id {
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 14px;
-        }
-
-        .user-details {
-            font-size: 12px;
-            color: var(--text-muted);
-            word-break: break-all;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 8px;
-        }
+        .user-info { display: flex; flex-direction: column; gap: 4px; }
+        .user-id { font-weight: 700; color: var(--primary); font-size: 14px; }
+        .user-details { font-size: 12px; color: var(--text-muted); word-break: break-all; }
+        .user-actions { display: flex; gap: 8px; }
 
         .btn-icon {
-            background: #2e3b56;
-            border: none;
-            color: var(--text-color);
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: #2e3b56; border: none; color: var(--text-color);
+            padding: 8px; border-radius: 6px; cursor: pointer;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
         }
-
         .btn-icon:hover { background: #3d4f74; }
         .btn-edit:hover { color: var(--primary); }
         .btn-delete:hover { color: var(--error); }
 
-        /* Loading */
         #loadingSection { text-align: center; padding: 40px 0; }
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border-left-color: var(--primary);
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+            border: 4px solid rgba(255, 255, 255, 0.1); width: 40px; height: 40px;
+            border-radius: 50%; border-left-color: var(--primary);
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none !important; }
@@ -285,7 +274,29 @@
     <div id="painelSection" class="hidden">
         <div class="header">
             <h2>FIRE PLUS Streaming</h2>
-            <p id="formSubtitle">Vincular ID do App ao Xtream Codes</p>
+            <p>Gerenciamento de Dispositivos Ativos</p>
+        </div>
+
+        <div class="top-bar">
+            <button type="button" class="btn-logout" id="logoutBtn" title="Fazer Logout">
+                <i class="fa-solid fa-sign-out-alt"></i> Sair
+            </button>
+            <button type="button" id="openModalBtn">
+                <i class="fa-solid fa-user-plus"></i> CADASTRAR USUÁRIO
+            </button>
+        </div>
+
+        <div class="user-list" id="userListContainer">
+            </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-card">
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+        <div class="header" style="margin-bottom: 20px;">
+            <h2 id="modalTitle" style="font-size: 22px;">Cadastrar Usuário</h2>
+            <p id="modalSubtitle">Vincule as credenciais ao ID do dispositivo</p>
         </div>
 
         <form id="cadastroForm">
@@ -321,23 +332,13 @@
                 </div>
             </div>
 
-            <div class="actions">
-                <button type="button" class="btn-logout" id="logoutBtn" title="Fazer Logout">
-                    <i class="fa-solid fa-sign-out-alt"></i> Sair
-                </button>
-                <button type="submit" id="submitBtn">
-                    <i class="fa-solid fa-bolt"></i> Ativar App
-                </button>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-secondary" id="cancelBtn" style="flex:1;">Cancelar</button>
+                <button type="submit" id="submitBtn" style="flex:2;">Salvar</button>
             </div>
         </form>
 
         <div id="message"></div>
-
-        <div class="users-section">
-            <h3>Dispositivos Ativados</h3>
-            <div class="user-list" id="userListContainer">
-                </div>
-        </div>
     </div>
 </div>
 
@@ -367,20 +368,24 @@
     const messageDiv = document.getElementById('message');
     const logoutBtn = document.getElementById('logoutBtn');
     const userListContainer = document.getElementById('userListContainer');
-    const submitBtn = document.getElementById('submitBtn');
-    const formSubtitle = document.getElementById('formSubtitle');
+    
+    // Elementos do Modal
+    const modalOverlay = document.getElementById('modalOverlay');
+    const openModalBtn = document.getElementById('openModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
     const docIdInput = document.getElementById('docId');
+    const submitBtn = document.getElementById('submitBtn');
 
     let isEditing = false;
     let unsubscribeSnapshot = null;
 
-    // Função auxiliar para exibir mensagem temporária
     function showTimedMessage(text, type) {
         messageDiv.style.display = "block";
         messageDiv.className = type;
         messageDiv.textContent = text;
-        
-        // Esconde após 4 segundos
         setTimeout(() => {
             messageDiv.style.display = "none";
             messageDiv.className = "";
@@ -388,16 +393,30 @@
         }, 4000);
     }
 
+    // Controle de abertura e fechamento do Modal
+    function openModal() { modalOverlay.classList.add('active'); }
+    function closeModal() { modalOverlay.classList.remove('active'); resetForm(); }
+    
+    openModalBtn.addEventListener('click', () => {
+        isEditing = false;
+        modalTitle.textContent = "Cadastrar Usuário";
+        modalSubtitle.textContent = "Vincule as credenciais ao ID do dispositivo";
+        docIdInput.disabled = false;
+        openModal();
+    });
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
-
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
-            listenToUsers(); // Ativa a listagem em tempo real
+            listenToUsers();
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
+            closeModal();
             if (unsubscribeSnapshot) unsubscribeSnapshot();
         }
     });
@@ -407,21 +426,15 @@
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
         const pass = document.getElementById('loginPassword').value.trim();
-
-        messageDiv.style.display = "block";
-        messageDiv.className = "";
-        messageDiv.textContent = "Verificando credenciais...";
-
         try {
             await signInWithEmailAndPassword(auth, email, pass);
             loginForm.reset();
-            messageDiv.style.display = "none";
         } catch (error) {
-            showTimedMessage("E-mail ou senha incorretos.", "error");
+            alert("E-mail ou senha incorretos.");
         }
     });
 
-    // Enviar (Salvar ou Editar)
+    // Enviar (Salvar/Editar)
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = docIdInput.value.trim();
@@ -438,31 +451,24 @@
                 vinculadoEm: new Date()
             });
 
-            if (isEditing) {
-                showTimedMessage("Cadastro atualizado com sucesso!", "success");
-                resetForm();
-            } else {
-                showTimedMessage("Aparelho ativado com sucesso!", "success");
-                cadastroForm.reset();
-            }
+            showTimedMessage(isEditing ? "Cadastro atualizado com sucesso!" : "Aparelho ativado com sucesso!", "success");
+            setTimeout(closeModal, 1000);
         } catch (error) {
             showTimedMessage("Erro ao salvar os dados.", "error");
         }
     });
 
-    // Escuta em tempo real a coleção de usuários
+    // Listagem em tempo real
     function listenToUsers() {
         unsubscribeSnapshot = onSnapshot(collection(db, "clientes"), (snapshot) => {
             userListContainer.innerHTML = "";
-            
             if(snapshot.empty) {
-                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center;">Nenhum dispositivo ativado ainda.</p>`;
+                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Nenhum dispositivo ativado ainda.</p>`;
                 return;
             }
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                
                 const card = document.createElement('div');
                 card.className = "user-card";
                 card.innerHTML = `
@@ -482,7 +488,6 @@
                 userListContainer.appendChild(card);
             });
 
-            // Configura os botões de ação dinâmica
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const b = e.currentTarget;
@@ -495,46 +500,39 @@
                     const id = e.currentTarget.dataset.id;
                     if(confirm(`Deseja mesmo remover o acesso do ID ${id}?`)) {
                         deleteDoc(doc(db, "clientes", id));
-                        showTimedMessage("Acesso removido com sucesso.", "success");
                     }
                 });
             });
         });
     }
 
-    // Prepara os campos para edição bloqueando a alteração do ID
     function prepararEdicao(id, dns, user, pass) {
         isEditing = true;
         docIdInput.value = id;
-        docIdInput.disabled = true; // Impede alterar o ID do aparelho
+        docIdInput.disabled = true;
         document.getElementById('dnsValue').value = dns;
         document.getElementById('userValue').value = user;
         document.getElementById('passValue').value = pass;
 
-        formSubtitle.textContent = "Editando credenciais do ID: " + id;
-        submitBtn.innerHTML = `<i class="fa-solid fa-save"></i> Salvar Alterações`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        modalTitle.textContent = "Editar Credenciais";
+        modalSubtitle.textContent = "Modificando o dispositivo ID: " + id;
+        openModal();
     }
 
     function resetForm() {
-        isEditing = false;
         cadastroForm.reset();
         docIdInput.disabled = false;
-        formSubtitle.textContent = "Vincular ID do App ao Xtream Codes";
-        submitBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> Ativar App`;
+        isEditing = false;
     }
 
-    // Logout
     logoutBtn.addEventListener('click', async () => {
         try {
             loadingSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
-            resetForm();
             await signOut(auth);
         } catch (error) {
             loadingSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
-            alert("Erro ao tentar sair.");
         }
     });
 </script>
