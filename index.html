@@ -51,17 +51,17 @@
             position: relative;
         }
 
-        /* LOGO DO INICIO (TELA DE LOGIN) - REDUZIDA EM 10% (108px) */
+        /* LOGO DO INICIO (TELA DE LOGIN) - REDUZIDA MAIS 20% (86px) */
         .login-logo {
-            max-width: 108px;
+            max-width: 86px;
             height: auto;
             margin-bottom: 12px;
             object-fit: contain;
         }
 
-        /* LOGO DA TELA INTERNA (PAINEL) - REDUZIDA EM 20% (96px) */
+        /* LOGO DA TELA INTERNA (PAINEL) - REDUZIDA MAIS 20% (77px) */
         .painel-logo {
-            max-width: 96px;
+            max-width: 77px;
             height: auto;
             margin-bottom: 12px;
             object-fit: contain;
@@ -530,7 +530,6 @@
     // SISTEMA DE LOGOUT AUTOMÁTICO
     function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
-        // Só ativa o temporizador se o usuário estiver de fato logado
         if (auth.currentUser) {
             inactivityTimeout = setTimeout(executarLogoutAutomatico, INACTIVITY_TIME);
         }
@@ -552,7 +551,6 @@
         }
     }
 
-    // Registra os eventos de interação para reiniciar o contador
     function setupInactivityListeners() {
         const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
         events.forEach(eventName => {
@@ -566,7 +564,7 @@
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
-            resetInactivityTimer(); // Inicia o contador
+            resetInactivityTimer();
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
@@ -577,7 +575,6 @@
         }
     });
 
-    // Inicializa o monitoramento de eventos na página
     setupInactivityListeners();
 
     // Login
