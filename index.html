@@ -1,420 +1,53 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - FIRE PLUS Streaming</title>
-    <link rel="icon" type="image/png" href="logopremium.png">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; }
-        .container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 900px; box-sizing: border-box; margin-bottom: 20px; position: relative; }
-        .logo-container { text-align: center; margin-bottom: 15px; }
-        .logo-img { max-width: 96px; height: auto; object-fit: contain; }
-        h2 { margin-top: 0; color: #e65100; text-align: center; font-size: 22px; }
-        h3 { margin-top: 0; color: #333; }
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-        .form-group { flex: 1; min-width: 200px; }
-        label { display: block; margin-bottom: 6px; color: #444; font-weight: 600; }
-        input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        input:disabled { background-color: #e9ecef; cursor: not-allowed; }
-        
-        /* Botões Gerais */
-        button { padding: 12px 20px; border: none; color: white; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-        .btn-main { background-color: #e65100; width: 100%; font-size: 16px; }
-        .btn-main:hover { background-color: #c64000; }
-        .btn-add-client { background-color: #28a745; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-add-client:hover { background-color: #218838; }
-        .btn-logout { background-color: #6c757d; }
-        .btn-logout:hover { background-color: #5a6268; }
-        .btn-cancel { background-color: #6c757d; width: 100%; }
-        .btn-cancel:hover { background-color: #5a6268; }
-        
-        #status-message, #login-message { margin-top: 15px; text-align: center; font-weight: bold; }
-        .success { color: #28a745; }
-        .error { color: #dc3545; }
-        .hidden { display: none !important; }
-        .subtitle { text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px; font-size: 14px; }
-        
-        /* Tela Inicial de Carregamento Antiflash */
-        #loading-screen { font-size: 18px; color: #e65100; font-weight: bold; text-align: center; }
-
-        /* Estilos da Janela Pop-up (Modal) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 100%; max-width: 550px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        
-        /* Estilos da Tabela */
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; color: #333; }
-        .actions-btn { display: flex; gap: 5px; }
-        .btn-table { padding: 6px 10px; font-size: 12px; font-weight: normal; }
-        .btn-edit { background-color: #ffc107; color: #212529; }
-        .btn-edit:hover { background-color: #e0a800; }
-        .btn-delete { background-color: #dc3545; }
-        .btn-delete:hover { background-color: #bd2130; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-    </style>
-</head>
-<body>
-
-<div id="loading-screen">
-    <p>Carregando FIRE PLUS...</p>
-</div>
-
-<div class="container hidden" id="login-screen" style="max-width: 450px;">
-    <div class="logo-container">
-       <img src="logopremium.png" alt="FIRE PLUS Logo" class="logo-img">
+<form id="cadastroForm">
+    <div class="form-group">
+        <label for="docId">ID do Cliente (Mac ou Identificador):</label>
+        <input type="text" id="docId" placeholder="Ex: cliente_joao" required>
     </div>
-    <h2>FIRE PLUS - Login Admin</h2>
-    <p class="subtitle">Autentique-se para gerenciar os IDs</p>
-    <form id="login-form">
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label for="login-email">E-mail:</label>
-            <input type="email" id="login-email" placeholder=" " required>
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label for="login-password">Senha:</label>
-            <input type="password" id="login-password" placeholder="  " required>
-        </div>
-        <button type="submit" class="btn-main">ENTRAR</button>
-    </form>
-    <div id="login-message"></div>
-</div>
-
-<div class="container hidden" id="admin-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="logopremium.png" alt="FIRE PLUS Logo" style="max-height: 32px; width: auto;">
-            <div>
-                <h2 style="text-align: left; margin: 0; font-size: 20px;">FIRE PLUS - Controle de IDs</h2>
-                <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie os IDs cadastrados <strong> </strong></p>
-            </div>
-        </div>
-        <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
+    <div class="form-group">
+        <label for="dnsValue">URL do Servidor (DNS):</label>
+        <input type="url" id="dnsValue" placeholder="http://exemplo.xyz:8080" required>
     </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-        <h3>Lista de IDs Cadastrados</h3>
-        <button class="btn-add-client" id="btn-open-modal">📑 Adicionar Cliente</button>
+    <div class="form-group">
+        <label for="userValue">Usuário:</label>
+        <input type="text" id="userValue" placeholder="Digite o usuário" required>
     </div>
-
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome (Dono)</th>
-                    <th>ID do Dispositivo</th>
-                    <th>URL (m3u)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="devices-table-body">
-                </tbody>
-        </table>
+    <div class="form-group">
+        <label for="passValue">Senha:</label>
+        <input type="password" id="passValue" placeholder="Digite a senha" required>
     </div>
-    <div id="status-message"></div>
-</div>
-
-<div class="modal-overlay hidden" id="form-modal">
-    <div class="modal-content">
-        <h2 id="modal-title" style="text-align: left; margin-bottom: 5px;">Adicionar Novo Cliente</h2>
-        <p class="subtitle" style="text-align: left; margin-bottom: 20px;">Preencha os dados do dispositivo abaixo.</p>
-        
-        <form id="admin-form">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="doc-name">Nome do Cliente (Controle no Painel):</label>
-                <input type="text" id="doc-name" placeholder="Ex: João Silva" required>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="doc-id">ID do Dispositivo:</label>
-                <input type="text" id="doc-id" placeholder="Ex: CDE58228" required>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="url-m3u">URL (url_m3u — Salva no Firestore):</label>
-                <input type="text" id="url-m3u" placeholder="Cole aqui a URL completa do stream" required>
-            </div>
-            
-            <div class="modal-buttons">
-                <button type="button" class="btn-cancel" id="btn-close-modal">Cancelar</button>
-                <button type="submit" class="btn-main" id="btn-submit" style="margin: 0;">Salvar Dispositivo</button>
-            </div>
-        </form>
-    </div>
-</div>
+    <button type="submit">Salvar no Firestore</button>
+</form>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    // ... (sua inicialização do Firebase continua igual)
 
-    // 🔒 Suas credenciais oficiais do FIRE PLUS aplicadas definitivamente
-    const firebaseConfig = {
-        apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
-        authDomain: "fire-plus-streaming-app.firebaseapp.com",
-        projectId: "fire-plus-streaming-app",
-        storageBucket: "fire-plus-streaming-app.firebasestorage.app",
-        messagingSenderId: "188055190455",
-        appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
-    };
-
-    // Inicializando Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    // Variáveis de Controle
-    let isEditing = false;
-    let currentAdminId = null;
-    let loadedDevices = [];
-    let messageTimeout = null; // Guarda o temporizador da mensagem
-
-    // Mapeamento do DOM
-    const loadingScreen = document.getElementById('loading-screen');
-    const loginScreen = document.getElementById('login-screen');
-    const adminScreen = document.getElementById('admin-screen');
-    const loginForm = document.getElementById('login-form');
-    const adminForm = document.getElementById('admin-form');
-    const loginMsg = document.getElementById('login-message');
-    const statusMsg = document.getElementById('status-message');
-    const btnLogout = document.getElementById('btn-logout');
-    const tableBody = document.getElementById('devices-table-body');
-    
-    // Elementos do Modal Pop-up
-    const formModal = document.getElementById('form-modal');
-    const btnOpenModal = document.getElementById('btn-open-modal');
-    const btnCloseModal = document.getElementById('btn-close-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const btnSubmit = document.getElementById('btn-submit');
-
-    const inputName = document.getElementById('doc-name');
-    const inputId = document.getElementById('doc-id');
-    const inputUrl = document.getElementById('url-m3u');
-
-    // Função auxiliar para exibir mensagens temporárias de sucesso
-    function showSuccessMessage(text) {
-        if (messageTimeout) clearTimeout(messageTimeout); // Cancela o temporizador anterior se houver
-        statusMsg.textContent = text;
-        statusMsg.className = "success";
-        
-        // Esconde a mensagem após 4 segundos de forma limpa
-        messageTimeout = setTimeout(() => {
-            statusMsg.textContent = "";
-            statusMsg.className = "";
-        }, 4000);
-    }
-
-    // Monitor de Autenticação Inteligente
-    onAuthStateChanged(auth, async (user) => {
-        loginMsg.textContent = "";
-        loginMsg.className = "";
-        statusMsg.textContent = "";
-        statusMsg.className = "";
-        loadingScreen.classList.add('hidden');
-
-        if (user) {
-            currentAdminId = user.uid;
-            loginScreen.classList.add('hidden');
-            adminScreen.classList.remove('hidden');
-            await fetchAndRenderTable();
-        } else {
-            currentAdminId = null;
-            loginScreen.classList.remove('hidden');
-            adminScreen.classList.add('hidden');
-            formModal.classList.add('hidden');
-        }
-    });
-
-    // Evento de Login
-    loginForm.addEventListener('submit', async (e) => {
+    document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        loginMsg.textContent = "Autenticando...";
-        loginMsg.className = "";
+        
+        const docId = document.getElementById('docId').value.trim();
+        const dnsValue = document.getElementById('dnsValue').value.trim();
+        const userValue = document.getElementById('userValue').value.trim();
+        const passValue = document.getElementById('passValue').value.trim();
+        const messageDiv = document.getElementById('message');
+        
+        messageDiv.textContent = "Salvando...";
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            loginForm.reset();
-        } catch (error) {
-            loginMsg.textContent = "Erro no login. Verifique e-mail e senha.";
-            loginMsg.className = "error";
-        }
-    });
-
-    // Evento de Logout
-    btnLogout.addEventListener('click', () => { signOut(auth); });
-
-    // Funções de abrir e fechar Pop-up (Modal)
-    btnOpenModal.addEventListener('click', () => {
-        isEditing = false;
-        adminForm.reset();
-        inputId.disabled = false;
-        modalTitle.textContent = "Adicionar Novo Cliente";
-        btnSubmit.textContent = "Salvar Dispositivo";
-        formModal.classList.remove('hidden');
-    });
-
-    btnCloseModal.addEventListener('click', () => {
-        formModal.classList.add('hidden');
-        adminForm.reset();
-        inputId.disabled = false;
-    });
-
-    // Buscar do Firestore filtrando apenas os do Administrador atual
-    async function fetchAndRenderTable() {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#e65100;">Buscando seus IDs no banco...</td></tr>`;
-        try {
-            const q = query(collection(db, "devices"), where("adminId", "==", currentAdminId));
-            const querySnapshot = await getDocs(q);
-            
-            loadedDevices = [];
-            querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                loadedDevices.push({
-                    id: docSnap.id,
-                    name: data.cliente_nome || "Sem Nome",
-                    url: data.url_m3u || ""
-                });
+            // Salva a estrutura XC no Firestore
+            await setDoc(doc(db, "clientes", docId), {
+                id: docId,
+                dns: dnsValue,
+                username: userValue,
+                password: passValue,
+                atualizadoEm: new Date()
             });
-            renderTable();
+
+            messageDiv.textContent = "Dados salvos com sucesso!";
+            messageDiv.className = "success";
+            document.getElementById('cadastroForm').reset();
         } catch (error) {
-            console.error(error);
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#dc3545;">Erro ao carregar dados do Firestore.</td></tr>`;
-        }
-    }
-
-    // Renderizar a Tabela Baseada nos dados do Firebase
-    function renderTable() {
-        tableBody.innerHTML = "";
-        if (loadedDevices.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum dispositivo cadastrado por você.</td></tr>`;
-            return;
-        }
-
-        loadedDevices.forEach((device) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${device.name}</strong></td>
-                <td><code>${device.id}</code></td>
-                <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${device.url}</td>
-                <td class="actions-btn">
-                    <button class="btn-table btn-edit" data-id="${device.id}">Editar</button>
-                    <button class="btn-table btn-delete" data-id="${device.id}">Excluir</button>
-                </td>
-            `;
-            tableBody.appendChild(tr);
-        });
-
-        document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEditClick));
-        document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDeleteClick));
-    }
-
-    // Ação do Botão "Editar" da Tabela
-    function handleEditClick(e) {
-        const idToEdit = e.target.getAttribute('data-id');
-        const device = loadedDevices.find(d => d.id === idToEdit);
-        
-        if (device) {
-            isEditing = true;
-            inputName.value = device.name;
-            inputId.value = device.id;
-            inputId.disabled = true;
-            inputUrl.value = device.url;
-            
-            modalTitle.textContent = "Editar Cliente: " + idToEdit;
-            btnSubmit.textContent = "Atualizar Alterações";
-            formModal.classList.remove('hidden');
-        }
-    }
-
-    // Ação do Botão "Excluir"
-    async function handleDeleteClick(e) {
-        const idToDelete = e.target.getAttribute('data-id');
-        if (!confirm(`Tem certeza que deseja excluir o ID "${idToDelete}" do Firestore e do Painel?`)) return;
-
-        statusMsg.textContent = "Removendo do Firestore...";
-        statusMsg.className = "";
-
-        try {
-            await deleteDoc(doc(db, "devices", idToDelete));
-            showSuccessMessage("Dispositivo excluído com sucesso!");
-            await fetchAndRenderTable();
-        } catch (error) {
-            console.error(error);
-            statusMsg.textContent = "Erro ao excluir do Firestore.";
-            statusMsg.className = "error";
-        }
-    }
-
-    // Salvar ou Atualizar dados via Modal
-    adminForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const nameValue = inputName.value.trim();
-        const deviceId = inputId.value.trim();
-        const urlM3uValue = inputUrl.value.trim();
-
-        if (!nameValue || !deviceId || !urlM3uValue) {
-            alert("Erro: Preencha todos os campos corretamente.");
-            return;
-        }
-
-        try {
-            const docRef = doc(db, "devices", deviceId);
-
-            if (isEditing) {
-                formModal.classList.add('hidden');
-                statusMsg.textContent = "Atualizando dados no Firestore...";
-                statusMsg.className = "";
-
-                await setDoc(docRef, {
-                    cliente_nome: nameValue,
-                    url_m3u: urlM3uValue,
-                    adminId: currentAdminId
-                });
-
-                showSuccessMessage("Dispositivo atualizado com sucesso!");
-                await fetchAndRenderTable();
-                adminForm.reset();
-                inputId.disabled = false;
-            } else {
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    alert(`⚠️ Erro: O ID "${deviceId}" já está cadastrado no sistema! Escolha outro ID.`);
-                    return; 
-                }
-
-                formModal.classList.add('hidden');
-                statusMsg.textContent = "Salvando novo dispositivo...";
-                statusMsg.className = "";
-
-                await setDoc(docRef, {
-                    cliente_nome: nameValue,
-                    url_m3u: urlM3uValue,
-                    adminId: currentAdminId
-                });
-
-                showSuccessMessage("Sucesso! Novo dispositivo cadastrado.");
-                await fetchAndRenderTable();
-                adminForm.reset();
-                inputId.disabled = false;
-            }
-        } catch (error) {
-            console.error(error);
-            formModal.classList.add('hidden');
-            statusMsg.textContent = "Erro na operação com o banco de dados. Verifique as regras de segurança.";
-            statusMsg.className = "error";
+            messageDiv.textContent = "Erro ao salvar.";
+            messageDiv.className = "error";
         }
     });
 </script>
-
-</body>
-</html>
