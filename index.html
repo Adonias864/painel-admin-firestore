@@ -33,6 +33,13 @@
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
+
+            /* CONFIGURAÇÃO PARA RESPONSIVIDADE EM SMART TVs E CELULARES */
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+            transition: background-image 0.5s ease-in-out;
         }
 
         .container {
@@ -43,6 +50,7 @@
             width: 100%;
             max-width: 600px;
             border: 1px solid var(--border);
+            z-index: 2;
         }
 
         .header {
@@ -51,7 +59,6 @@
             position: relative;
         }
 
-        /* LOGO DO INICIO (TELA DE LOGIN) - REDUZIDA MAIS 20% (86px) */
         .login-logo {
             max-width: 86px;
             height: auto;
@@ -59,7 +66,6 @@
             object-fit: contain;
         }
 
-        /* LOGO DA TELA INTERNA (PAINEL) - REDUZIDA MAIS 20% (77px) */
         .painel-logo {
             max-width: 77px;
             height: auto;
@@ -181,7 +187,6 @@
         }
         button.btn-secondary:hover { background: #3d4f74; }
 
-        /* Estilos dos Modais (Popups) */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -226,7 +231,6 @@
         .message-box.success { display: block; background: rgba(16, 185, 129, 0.1); color: var(--success); }
         .message-box.error { display: block; background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
-        /* Lista de Dispositivos */
         .user-list {
             max-height: 400px;
             overflow-y: auto;
@@ -280,7 +284,7 @@
     <div id="loginSection" class="hidden">
         <div class="header">
             <img src="logopremium.png" alt="Logo FIRE PLUS" class="login-logo">
-            <h2>FIRE PLUS Streaming</h2>
+            <h2>FIRE PLUS</h2>
             <p>Painel Administrativo de Streaming</p>
         </div>
         <form id="loginForm">
@@ -431,7 +435,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    // IMPORTANTE: Adicionado query e where para filtrar por Administrador
+    import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -454,7 +459,6 @@
     const userListContainer = document.getElementById('userListContainer');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Elementos do Modal de Cadastro
     const cadastroModalOverlay = document.getElementById('cadastroModalOverlay');
     const openCadastroModalBtn = document.getElementById('openCadastroModalBtn');
     const closeCadastroModalBtn = document.getElementById('closeCadastroModalBtn');
@@ -462,7 +466,6 @@
     const cadastroForm = document.getElementById('cadastroForm');
     const cadastroMessage = document.getElementById('cadastroMessage');
 
-    // Elementos do Modal de Edição
     const editModalOverlay = document.getElementById('editModalOverlay');
     const closeEditModalBtn = document.getElementById('closeEditModalBtn');
     const cancelEditBtn = document.querySelector('.id-cancel-edit');
@@ -478,7 +481,6 @@
     let unsubscribeSnapshot = null;
     let inactivityTimeout = null;
     
-    // TEMPO DE INATIVIDADE: 15 minutos (em milissegundos)
     const INACTIVITY_TIME = 15 * 60 * 1000; 
 
     function showTimedMessage(element, text, type) {
@@ -492,7 +494,6 @@
         }, 4000);
     }
 
-    // Gerenciador de visibilidade de senhas (Olho)
     document.querySelectorAll('.toggle-password').forEach(eyeIcon => {
         eyeIcon.addEventListener('click', (e) => {
             const targetId = e.currentTarget.getAttribute('data-target');
@@ -527,7 +528,6 @@
         document.getElementById('editPassValue').type = "password";
     }
 
-    // SISTEMA DE LOGOUT AUTOMÁTICO
     function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
         if (auth.currentUser) {
@@ -535,7 +535,7 @@
         }
     }
 
-    async function executarLogoutAutomatico() {
+    async function ejecutarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -558,12 +558,28 @@
         });
     }
 
+    function carregarWallpaperTempoReal() {
+        const configDocRef = doc(db, "configuracao", "app");
+        
+        onSnapshot(configDocRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                const urlImagem = data.wallpaperurl;
+                if (urlImagem && urlImagem.trim() !== "") {
+                    document.body.style.backgroundImage = `url('${urlImagem}')`;
+                }
+            }
+        }, (error) => {
+            console.error("Erro ao ler o wallpaper: ", error);
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
-            listenToUsers();
+            listenToUsers(); // Passa a escutar os usuários filtrados
             resetInactivityTimer();
         } else {
             loginSection.classList.remove('hidden');
@@ -576,6 +592,7 @@
     });
 
     setupInactivityListeners();
+    carregarWallpaperTempoReal();
 
     // Login
     loginForm.addEventListener('submit', async (e) => {
@@ -590,7 +607,7 @@
         }
     });
 
-    // Cadastro
+    // Cadastro - MODIFICADO: Agora grava quem é o administrador dono do cliente (adminId)
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = document.getElementById('docId').value.trim();
@@ -604,6 +621,7 @@
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
+                adminId: auth.currentUser.uid, // <--- SALVA O ID DO ADM QUE CRIOU
                 vinculadoEm: new Date()
             });
             showTimedMessage(cadastroMessage, "Aparelho ativado com sucesso!", "success");
@@ -613,7 +631,7 @@
         }
     });
 
-    // Edição
+    // Edição - MODIFICADO: Mantém o adminId correto ao atualizar
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = editDocIdInput.value;
@@ -627,6 +645,7 @@
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
+                adminId: auth.currentUser.uid, // <--- MANTÉM O VÍNCULO DO ADM
                 vinculadoEm: new Date()
             });
             showTimedMessage(editMessage, "Cadastro atualizado com sucesso!", "success");
@@ -636,12 +655,17 @@
         }
     });
 
-    // Listagem em tempo real
+    // LISTAGEM EM TEMPO REAL COM FILTRO DE ADMINISTRADOR EXCLUSIVO
     function listenToUsers() {
-        unsubscribeSnapshot = onSnapshot(collection(db, "clientes"), (snapshot) => {
+        if (!auth.currentUser) return;
+
+        // Filtra a busca para trazer APENAS clientes cujo 'adminId' seja igual ao ID do Administrador logado
+        const q = query(collection(db, "clientes"), where("adminId", "==", auth.currentUser.uid));
+
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
             userListContainer.innerHTML = "";
             if(snapshot.empty) {
-                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Nenhum dispositivo ativado ainda.</p>`;
+                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Você não possui nenhum dispositivo ativado.</p>`;
                 return;
             }
 
