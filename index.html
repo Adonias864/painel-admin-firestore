@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUBLIMArt - Painel Admin</title>
+    <title>FIRE PLUS Streaming - Painel Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #0c111d;
+            --card-bg: #1a2236;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
+            --primary: #f59e0b; /* Laranja Firestore */
+            --primary-hover: #d97706;
+            --accent: #ff743d; /* Coral Firestore */
             --success: #10b981;
             --error: #ef4444;
-            --border: #334155;
+            --border: #2e3b56;
         }
 
         body {
@@ -35,7 +36,7 @@
             background: var(--card-bg);
             padding: 40px 30px;
             border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
             width: 100%;
             max-width: 450px;
             border: 1px solid var(--border);
@@ -48,15 +49,16 @@
 
         .header h2 {
             margin: 0;
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(to right, #3b82f6, #60a5fa);
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .header p {
-            margin: 5px 0 0 0;
+            margin: 8px 0 0 0;
             color: var(--text-muted);
             font-size: 14px;
         }
@@ -70,6 +72,7 @@
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
+            color: #e2e8f0;
         }
 
         .input-wrapper {
@@ -87,17 +90,19 @@
         input {
             width: 100%;
             padding: 12px 14px 12px 42px;
-            background-color: #0f172a;
+            background-color: #0c111d;
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text-color);
             font-size: 15px;
             box-sizing: border-box;
+            transition: border-color 0.2s;
         }
 
         input:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
         }
 
         .actions {
@@ -109,31 +114,32 @@
         button {
             flex: 2;
             padding: 12px;
-            background-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             border: none;
-            color: white;
+            color: #0c111d;
             font-size: 15px;
-            font-weight: 600;
+            font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
+            transition: opacity 0.2s;
         }
 
-        button:hover { background-color: var(--primary-hover); }
+        button:hover { opacity: 0.9; }
 
         button.btn-logout {
             flex: 1;
-            background-color: #334155;
+            background: #2e3b56;
             color: var(--text-color);
             border: 1px solid var(--border);
         }
 
         button.btn-logout:hover {
-            background-color: #475569;
-            color: #ef4444;
+            background: #3d4f74;
+            color: var(--error);
         }
 
         #message {
@@ -148,18 +154,42 @@
         #message.success { display: block; background: rgba(16, 185, 129, 0.1); color: var(--success); }
         #message.error { display: block; background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
-        /* Classes para alternar as telas */
+        /* Loading */
+        #loadingSection {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border-left-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ================= SEÇÃO DE LOGIN ================= -->
-    <div id="loginSection">
+    <div id="loadingSection">
+        <div class="spinner"></div>
+        <p style="color: var(--text-muted); font-size: 14px;">Verificando sessão...</p>
+    </div>
+
+    <div id="loginSection" class="hidden">
         <div class="header">
-            <h2>Acessar Painel</h2>
-            <p>Insira suas credenciais de administrador</p>
+            <h2>FIRE PLUS</h2>
+            <p>Painel Administrativo de Streaming</p>
         </div>
         <form id="loginForm">
             <div class="form-group">
@@ -182,10 +212,9 @@
         </form>
     </div>
 
-    <!-- ================= SEÇÃO DE CADASTRO (PAINEL) ================= -->
     <div id="painelSection" class="hidden">
         <div class="header">
-            <h2>Painel de Ativação</h2>
+            <h2>FIRE PLUS Streaming</h2>
             <p>Vincular ID do App ao Xtream Codes</p>
         </div>
 
@@ -233,7 +262,6 @@
         </form>
     </div>
 
-    <!-- Mensagens de Feedback -->
     <div id="message"></div>
 </div>
 
@@ -242,21 +270,21 @@
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // ⚠️ COLOQUE SUAS CREDENCIAIS DO FIREBASE AQUI
-   const firebaseConfig = {
-  apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
-  authDomain: "fire-plus-streaming-app.firebaseapp.com",
-  projectId: "fire-plus-streaming-app",
-  storageBucket: "fire-plus-streaming-app.firebasestorage.app",
-  messagingSenderId: "188055190455",
-  appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
-};
+    // Suas credenciais integradas
+    const firebaseConfig = {
+        apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
+        authDomain: "fire-plus-streaming-app.firebaseapp.com",
+        projectId: "fire-plus-streaming-app",
+        storageBucket: "fire-plus-streaming-app.firebasestorage.app",
+        messagingSenderId: "188055190455",
+        appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Seletores do DOM
+    const loadingSection = document.getElementById('loadingSection');
     const loginSection = document.getElementById('loginSection');
     const painelSection = document.getElementById('painelSection');
     const loginForm = document.getElementById('loginForm');
@@ -264,22 +292,18 @@
     const messageDiv = document.getElementById('message');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Monitora se o usuário está logado ou deslogado
     onAuthStateChanged(auth, (user) => {
+        loadingSection.classList.add('hidden');
+
         if (user) {
-            // Usuário logado -> Mostra Painel, esconde Login
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
-            messageDiv.style.display = "none";
         } else {
-            // Usuário deslogado -> Mostra Login, esconde Painel
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
-            messageDiv.style.display = "none";
         }
     });
 
-    // Ação de Login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -292,13 +316,13 @@
         try {
             await signInWithEmailAndPassword(auth, email, pass);
             loginForm.reset();
+            messageDiv.style.display = "none";
         } catch (error) {
             messageDiv.textContent = "E-mail ou senha incorretos.";
             messageDiv.className = "error";
         }
     });
 
-    // Ação de Enviar Cadastro para o Firestore
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = document.getElementById('docId').value.trim();
@@ -328,12 +352,16 @@
         }
     });
 
-    // Ação do Botão Sair (Faz Logout do Firebase)
     logoutBtn.addEventListener('click', async () => {
         try {
+            loadingSection.classList.remove('hidden');
+            painelSection.classList.add('hidden');
+            
             await signOut(auth);
             cadastroForm.reset();
         } catch (error) {
+            loadingSection.classList.add('hidden');
+            painelSection.classList.remove('hidden');
             alert("Erro ao tentar sair.");
         }
     });
