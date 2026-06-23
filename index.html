@@ -64,17 +64,17 @@
         <img src="https://i.imgur.com/q2QNNcc.png" alt="FIRE PLUS Logo" class="logo-img">
     </div>
     <h2>FIRE PLUS - Login Admin</h2>
-    <p class="subtitle">Autentique-se para gerenciar os IDs</p>
+    <p class="subtitle">Autentique-se para gerenciar os dispositivos</p>
     <form id="login-form">
         <div class="form-group" style="margin-bottom: 20px;">
             <label for="login-email">E-mail:</label>
-            <input type="email" id="login-email" placeholder="  " required>
+            <input type="email" id="login-email" placeholder="seu-email@provedor.com" required>
         </div>
         <div class="form-group" style="margin-bottom: 20px;">
             <label for="login-password">Senha:</label>
-            <input type="password" id="login-password" placeholder="  " required>
+            <input type="password" id="login-password" placeholder="Sua senha" required>
         </div>
-        <button type="submit" class="btn-main">ENTRAR</button>
+        <button type="submit" class="btn-main">Entrar no Painel</button>
     </form>
     <div id="login-message"></div>
 </div>
@@ -84,8 +84,8 @@
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="https://i.imgur.com/q2QNNcc.png" alt="FIRE PLUS Logo" style="max-height: 32px; width: auto;">
             <div>
-                <h2 style="text-align: left; margin: 0; font-size: 20px;">FIRE PLUS - Controle de IDs</h2>
-                <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie todos os IDs cadastrados <strong>devices</strong></p>
+                <h2 style="text-align: left; margin: 0; font-size: 20px;">FIRE PLUS - Controle de Dispositivos</h2>
+                <p class="subtitle" style="text-align: left; margin: 5px 0 0 0;">Gerencie os acessos salvos na coleção <strong>devices</strong></p>
             </div>
         </div>
         <button class="btn-logout" id="btn-logout">Sair do Sistema</button>
@@ -187,9 +187,8 @@
     const inputId = document.getElementById('doc-id');
     const inputUrl = document.getElementById('url-m3u');
 
-    // Monitor de Autenticação (Ajustado para limpar os textos residuais)
+    // Monitor de Autenticação
     onAuthStateChanged(auth, (user) => {
-        // Limpa as mensagens de tela sempre que o usuário entra ou sai
         loginMsg.textContent = "";
         loginMsg.className = "";
         statusMsg.textContent = "";
@@ -322,15 +321,15 @@
             return;
         }
 
-        statusMsg.textContent = "Processando requisição...";
-        statusMsg.className = "";
-        formModal.classList.add('hidden');
-
         try {
             const docRef = doc(db, "devices", deviceId);
 
             if (isEditing) {
-                // Modo Edição
+                // Modo Edição: Salva e fecha a janela normalmente
+                formModal.classList.add('hidden');
+                statusMsg.textContent = "Atualizando dados no Firestore...";
+                statusMsg.className = "";
+
                 await setDoc(docRef, { url_m3u: urlM3uValue });
                 localDevices = localDevices.map(d => d.id === deviceId ? { name: nameValue, id: deviceId, url: urlM3uValue } : d);
                 localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
@@ -338,16 +337,22 @@
                 statusMsg.textContent = "Dispositivo atualizado com sucesso!";
                 statusMsg.className = "success";
                 renderTable();
+                adminForm.reset();
+                inputId.disabled = false;
             } else {
-                // Modo Cadastro Novo
+                // Modo Cadastro Novo: Primeiro checa a duplicidade ANTES de fechar a janela
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() || localDevices.some(d => d.id === deviceId)) {
-                    statusMsg.textContent = `Erro: O ID "${deviceId}" já está cadastrado!`;
-                    statusMsg.className = "error";
-                    formModal.classList.remove('hidden');
-                    return;
+                    // 🔥 MODIFICAÇÃO: Dispara o Alerta Pop-up visual e mantém o modal de cadastro aberto!
+                    alert(`⚠️ Erro: O ID "${deviceId}" já está cadastrado no sistema! Escolha outro ID.`);
+                    return; 
                 }
+
+                // Se o ID for único, fecha a janela e realiza o salvamento
+                formModal.classList.add('hidden');
+                statusMsg.textContent = "Salvando novo dispositivo...";
+                statusMsg.className = "";
 
                 await setDoc(docRef, { url_m3u: urlM3uValue });
                 localDevices.push({ name: nameValue, id: deviceId, url: urlM3uValue });
@@ -356,11 +361,12 @@
                 statusMsg.textContent = "Sucesso! Novo dispositivo cadastrado.";
                 statusMsg.className = "success";
                 renderTable();
+                adminForm.reset();
+                inputId.disabled = false;
             }
-            adminForm.reset();
-            inputId.disabled = false;
         } catch (error) {
             console.error(error);
+            formModal.classList.add('hidden');
             statusMsg.textContent = "Erro na operação com o banco de dados.";
             statusMsg.className = "error";
         }
