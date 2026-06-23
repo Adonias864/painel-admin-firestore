@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIRE PLUS Streaming - Painel Admin</title>
+    
+    <link rel="icon" type="image/png" href="logopremium.png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -46,6 +49,14 @@
             text-align: center;
             margin-bottom: 25px;
             position: relative;
+        }
+
+        /* ESTILO DA LOGO DENTRO DOS PAINÉIS */
+        .panel-logo {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 12px;
+            object-fit: contain;
         }
 
         .header h2 {
@@ -260,6 +271,7 @@
 
     <div id="loginSection" class="hidden">
         <div class="header">
+            <img src="logopremium.png" alt="Logo FIRE PLUS" class="panel-logo">
             <h2>FIRE PLUS</h2>
             <p>Painel Administrativo de Streaming</p>
         </div>
@@ -286,6 +298,7 @@
 
     <div id="painelSection" class="hidden">
         <div class="header">
+            <img src="logopremium.png" alt="Logo FIRE PLUS" class="panel-logo">
             <h2>FIRE PLUS Streaming</h2>
             <p>Gerenciamento de Dispositivos Ativos</p>
         </div>
@@ -456,7 +469,6 @@
 
     let unsubscribeSnapshot = null;
 
-    // Função para gerenciar mensagens dinâmicas temporárias nos modais
     function showTimedMessage(element, text, type) {
         element.style.display = "block";
         element.className = "message-box " + type;
@@ -484,14 +496,12 @@
         });
     });
 
-    // Controladores do Popup de Cadastro
     function openCadastro() { cadastroModalOverlay.classList.add('active'); }
     function closeCadastro() { cadastroModalOverlay.classList.remove('active'); cadastroForm.reset(); resetEyeIcons(); }
     openCadastroModalBtn.addEventListener('click', openCadastro);
     closeCadastroModalBtn.addEventListener('click', closeCadastro);
     cancelCadastroBtn.addEventListener('click', closeCadastro);
 
-    // Controladores do Popup de Edição
     function openEdit() { editModalOverlay.classList.add('active'); }
     function closeEdit() { editModalOverlay.classList.remove('active'); editForm.reset(); resetEyeIcons(); }
     closeEditModalBtn.addEventListener('click', closeEdit);
@@ -505,7 +515,6 @@
         document.getElementById('editPassValue').type = "password";
     }
 
-    // Monitoramento Auth Firebase
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
         if (user) {
@@ -534,7 +543,7 @@
         }
     });
 
-    // Submissão do formulário de Cadastro
+    // Cadastro
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = document.getElementById('docId').value.trim();
@@ -557,7 +566,7 @@
         }
     });
 
-    // Submissão do formulário de Edição
+    // Edição
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = editDocIdInput.value;
@@ -580,7 +589,7 @@
         }
     });
 
-    // Listagem em tempo real e mapeamento de cliques
+    // Listagem em tempo real
     function listenToUsers() {
         unsubscribeSnapshot = onSnapshot(collection(db, "clientes"), (snapshot) => {
             userListContainer.innerHTML = "";
@@ -615,7 +624,6 @@
                 userListContainer.appendChild(card);
             });
 
-            // Gerenciador de cliques para abrir popup de EDIÇÃO
             userListContainer.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const b = e.currentTarget;
@@ -628,7 +636,6 @@
                 });
             });
 
-            // Gerenciador de cliques para DELETAR
             userListContainer.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.currentTarget.getAttribute('data-id');
@@ -640,19 +647,15 @@
         });
     }
 
-    // Carrega as informações e abre o modal exclusivo de EDIÇÃO
     function prepararEdicao(id, dns, user, pass) {
         editDocIdInput.value = id;
         editDnsInput.value = dns;
         editUserInput.value = user;
         editPassInput.value = pass;
-
         editModalSubtitle.textContent = "ID do Dispositivo: " + id;
-        
         openEdit();
     }
 
-    // Logout
     logoutBtn.addEventListener('click', async () => {
         try {
             loadingSection.classList.remove('hidden');
