@@ -187,8 +187,14 @@
     const inputId = document.getElementById('doc-id');
     const inputUrl = document.getElementById('url-m3u');
 
-    // Monitor de Autenticação
+    // Monitor de Autenticação (Ajustado para limpar os textos residuais)
     onAuthStateChanged(auth, (user) => {
+        // Limpa as mensagens de tela sempre que o usuário entra ou sai
+        loginMsg.textContent = "";
+        loginMsg.className = "";
+        statusMsg.textContent = "";
+        statusMsg.className = "";
+
         if (user) {
             loginScreen.classList.add('hidden');
             adminScreen.classList.remove('hidden');
@@ -270,13 +276,13 @@
             isEditing = true;
             inputName.value = device.name;
             inputId.value = device.id;
-            inputId.disabled = true; // Trava o ID na edição
+            inputId.disabled = true;
             inputUrl.value = device.url;
             
             modalTitle.textContent = "Editar Cliente: " + idToEdit;
             btnSubmit.textContent = "Atualizar Alterações";
             
-            formModal.classList.remove('hidden'); // Abre o Pop-up
+            formModal.classList.remove('hidden');
         }
     }
 
@@ -318,7 +324,7 @@
 
         statusMsg.textContent = "Processando requisição...";
         statusMsg.className = "";
-        formModal.classList.add('hidden'); // Fecha o modal
+        formModal.classList.add('hidden');
 
         try {
             const docRef = doc(db, "devices", deviceId);
@@ -329,7 +335,7 @@
                 localDevices = localDevices.map(d => d.id === deviceId ? { name: nameValue, id: deviceId, url: urlM3uValue } : d);
                 localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
 
-                statusMsg.textContent = "Dispositivo updated com sucesso!";
+                statusMsg.textContent = "Dispositivo atualizado com sucesso!";
                 statusMsg.className = "success";
                 renderTable();
             } else {
@@ -339,7 +345,7 @@
                 if (docSnap.exists() || localDevices.some(d => d.id === deviceId)) {
                     statusMsg.textContent = `Erro: O ID "${deviceId}" já está cadastrado!`;
                     statusMsg.className = "error";
-                    formModal.classList.remove('hidden'); // Reabre se falhar
+                    formModal.classList.remove('hidden');
                     return;
                 }
 
