@@ -34,6 +34,9 @@
         .hidden { display: none !important; }
         .subtitle { text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px; font-size: 14px; }
         
+        /* Tela Inicial de Carregamento Antiflash */
+        #loading-screen { font-size: 18px; color: #e65100; font-weight: bold; text-align: center; }
+
         /* Estilos da Janela Pop-up (Modal) */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 100%; max-width: 550px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease; }
@@ -59,7 +62,11 @@
 </head>
 <body>
 
-<div class="container" id="login-screen" style="max-width: 450px;">
+<div id="loading-screen">
+    <p>Carregando FIRE PLUS...</p>
+</div>
+
+<div class="container hidden" id="login-screen" style="max-width: 450px;">
     <div class="logo-container">
         <img src="https://i.imgur.com/q2QNNcc.png" alt="FIRE PLUS Logo" class="logo-img">
     </div>
@@ -144,7 +151,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // 🔒 Suas credenciais oficiais do FIRE PLUS aplicadas definitivamente
@@ -164,9 +171,11 @@
 
     // Variáveis de Controle
     let isEditing = false;
-    let localDevices = JSON.parse(localStorage.getItem('fireplus_devices')) || [];
+    let currentAdminId = null;
+    let loadedDevices = [];
 
     // Mapeamento do DOM
+    const loadingScreen = document.getElementById('loading-screen');
     const loginScreen = document.getElementById('login-screen');
     const adminScreen = document.getElementById('admin-screen');
     const loginForm = document.getElementById('login-form');
@@ -187,18 +196,21 @@
     const inputId = document.getElementById('doc-id');
     const inputUrl = document.getElementById('url-m3u');
 
-    // Monitor de Autenticação
-    onAuthStateChanged(auth, (user) => {
+    // Monitor de Autenticação Inteligente
+    onAuthStateChanged(auth, async (user) => {
         loginMsg.textContent = "";
         loginMsg.className = "";
         statusMsg.textContent = "";
         statusMsg.className = "";
+        loadingScreen.classList.add('hidden');
 
         if (user) {
+            currentAdminId = user.uid;
             loginScreen.classList.add('hidden');
             adminScreen.classList.remove('hidden');
-            renderTable();
+            await fetchAndRenderTable();
         } else {
+            currentAdminId = null;
             loginScreen.classList.remove('hidden');
             adminScreen.classList.add('hidden');
             formModal.classList.add('hidden');
@@ -240,15 +252,38 @@
         inputId.disabled = false;
     });
 
-    // Renderizar a Tabela Baseada no LocalStorage
+    // Buscar do Firestore filtrando apenas os do Administrador atual
+    async function fetchAndRenderTable() {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#e65100;">Buscando seus IDs no banco...</td></tr>`;
+        try {
+            const q = query(collection(db, "devices"), where("adminId", "==", currentAdminId));
+            const querySnapshot = await getDocs(q);
+            
+            loadedDevices = [];
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                loadedDevices.push({
+                    id: docSnap.id,
+                    name: data.cliente_nome || "Sem Nome",
+                    url: data.url_m3u || ""
+                });
+            });
+            renderTable();
+        } catch (error) {
+            console.error(error);
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#dc3545;">Erro ao carregar dados do Firestore.</td></tr>`;
+        }
+    }
+
+    // Renderizar a Tabela Baseada nos dados do Firebase
     function renderTable() {
         tableBody.innerHTML = "";
-        if (localDevices.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum dispositivo cadastrado localmente.</td></tr>`;
+        if (loadedDevices.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum dispositivo cadastrado por você.</td></tr>`;
             return;
         }
 
-        localDevices.forEach((device) => {
+        loadedDevices.forEach((device) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${device.name}</strong></td>
@@ -269,7 +304,7 @@
     // Ação do Botão "Editar" da Tabela
     function handleEditClick(e) {
         const idToEdit = e.target.getAttribute('data-id');
-        const device = localDevices.find(d => d.id === idToEdit);
+        const device = loadedDevices.find(d => d.id === idToEdit);
         
         if (device) {
             isEditing = true;
@@ -280,7 +315,6 @@
             
             modalTitle.textContent = "Editar Cliente: " + idToEdit;
             btnSubmit.textContent = "Atualizar Alterações";
-            
             formModal.classList.remove('hidden');
         }
     }
@@ -295,12 +329,9 @@
 
         try {
             await deleteDoc(doc(db, "devices", idToDelete));
-            localDevices = localDevices.filter(d => d.id !== idToDelete);
-            localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
-
             statusMsg.textContent = "Dispositivo excluído com sucesso!";
             statusMsg.className = "success";
-            renderTable();
+            await fetchAndRenderTable();
         } catch (error) {
             console.error(error);
             statusMsg.textContent = "Erro ao excluir do Firestore.";
@@ -325,49 +356,49 @@
             const docRef = doc(db, "devices", deviceId);
 
             if (isEditing) {
-                // Modo Edição: Salva e fecha a janela normalmente
                 formModal.classList.add('hidden');
                 statusMsg.textContent = "Atualizando dados no Firestore...";
                 statusMsg.className = "";
 
-                await setDoc(docRef, { url_m3u: urlM3uValue });
-                localDevices = localDevices.map(d => d.id === deviceId ? { name: nameValue, id: deviceId, url: urlM3uValue } : d);
-                localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
+                await setDoc(docRef, {
+                    cliente_nome: nameValue,
+                    url_m3u: urlM3uValue,
+                    adminId: currentAdminId
+                });
 
                 statusMsg.textContent = "Dispositivo atualizado com sucesso!";
                 statusMsg.className = "success";
-                renderTable();
+                await fetchAndRenderTable();
                 adminForm.reset();
                 inputId.disabled = false;
             } else {
-                // Modo Cadastro Novo: Primeiro checa a duplicidade ANTES de fechar a janela
                 const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists() || localDevices.some(d => d.id === deviceId)) {
-                    // 🔥 MODIFICAÇÃO: Dispara o Alerta Pop-up visual e mantém o modal de cadastro aberto!
+                if (docSnap.exists()) {
                     alert(`⚠️ Erro: O ID "${deviceId}" já está cadastrado no sistema! Escolha outro ID.`);
                     return; 
                 }
 
-                // Se o ID for único, fecha a janela e realiza o salvamento
                 formModal.classList.add('hidden');
                 statusMsg.textContent = "Salvando novo dispositivo...";
                 statusMsg.className = "";
 
-                await setDoc(docRef, { url_m3u: urlM3uValue });
-                localDevices.push({ name: nameValue, id: deviceId, url: urlM3uValue });
-                localStorage.setItem('fireplus_devices', JSON.stringify(localDevices));
+                await setDoc(docRef, {
+                    cliente_nome: nameValue,
+                    url_m3u: urlM3uValue,
+                    adminId: currentAdminId
+                });
 
                 statusMsg.textContent = "Sucesso! Novo dispositivo cadastrado.";
                 statusMsg.className = "success";
-                renderTable();
+                await fetchAndRenderTable();
                 adminForm.reset();
                 inputId.disabled = false;
             }
         } catch (error) {
             console.error(error);
             formModal.classList.add('hidden');
-            statusMsg.textContent = "Erro na operação com o banco de dados.";
+            statusMsg.textContent = "Erro na operação com o banco de dados. Verifique as regras de segurança.";
             statusMsg.className = "error";
         }
     });
