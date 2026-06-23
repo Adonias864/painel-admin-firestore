@@ -51,9 +51,17 @@
             position: relative;
         }
 
-        /* ESTILO DA LOGO DENTRO DOS PAINÉIS */
-        .panel-logo {
-            max-width: 120px;
+        /* LOGO DO INICIO (TELA DE LOGIN) - REDUZIDA EM 10% (108px) */
+        .login-logo {
+            max-width: 108px;
+            height: auto;
+            margin-bottom: 12px;
+            object-fit: contain;
+        }
+
+        /* LOGO DA TELA INTERNA (PAINEL) - REDUZIDA EM 20% (96px) */
+        .painel-logo {
+            max-width: 96px;
             height: auto;
             margin-bottom: 12px;
             object-fit: contain;
@@ -271,7 +279,7 @@
 
     <div id="loginSection" class="hidden">
         <div class="header">
-            <img src="logopremium.png" alt="Logo FIRE PLUS" class="panel-logo">
+            <img src="logopremium.png" alt="Logo FIRE PLUS" class="login-logo">
             <h2>FIRE PLUS</h2>
             <p>Painel Administrativo de Streaming</p>
         </div>
@@ -298,7 +306,7 @@
 
     <div id="painelSection" class="hidden">
         <div class="header">
-            <img src="logopremium.png" alt="Logo FIRE PLUS" class="panel-logo">
+            <img src="logopremium.png" alt="Logo FIRE PLUS" class="painel-logo">
             <h2>FIRE PLUS Streaming</h2>
             <p>Gerenciamento de Dispositivos Ativos</p>
         </div>
@@ -468,6 +476,10 @@
     const editPassInput = document.getElementById('editPassValue');
 
     let unsubscribeSnapshot = null;
+    let inactivityTimeout = null;
+    
+    // TEMPO DE INATIVIDADE: 15 minutos (em milissegundos)
+    const INACTIVITY_TIME = 15 * 60 * 1000; 
 
     function showTimedMessage(element, text, type) {
         element.style.display = "block";
@@ -515,20 +527,58 @@
         document.getElementById('editPassValue').type = "password";
     }
 
+    // SISTEMA DE LOGOUT AUTOMÁTICO
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimeout);
+        // Só ativa o temporizador se o usuário estiver de fato logado
+        if (auth.currentUser) {
+            inactivityTimeout = setTimeout(executarLogoutAutomatico, INACTIVITY_TIME);
+        }
+    }
+
+    async function executarLogoutAutomatico() {
+        if (auth.currentUser) {
+            try {
+                loadingSection.classList.remove('hidden');
+                painelSection.classList.add('hidden');
+                closeCadastro();
+                closeEdit();
+                await signOut(auth);
+                alert("Sessão encerrada por inatividade.");
+            } catch (error) {
+                loadingSection.classList.add('hidden');
+                painelSection.classList.remove('hidden');
+            }
+        }
+    }
+
+    // Registra os eventos de interação para reiniciar o contador
+    function setupInactivityListeners() {
+        const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
+        events.forEach(eventName => {
+            window.addEventListener(eventName, resetInactivityTimer, true);
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
+            resetInactivityTimer(); // Inicia o contador
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
             closeCadastro();
             closeEdit();
+            clearTimeout(inactivityTimeout);
             if (unsubscribeSnapshot) unsubscribeSnapshot();
         }
     });
+
+    // Inicializa o monitoramento de eventos na página
+    setupInactivityListeners();
 
     // Login
     loginForm.addEventListener('submit', async (e) => {
