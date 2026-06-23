@@ -173,6 +173,7 @@
     let isEditing = false;
     let currentAdminId = null;
     let loadedDevices = [];
+    let messageTimeout = null; // Guarda o temporizador da mensagem
 
     // Mapeamento do DOM
     const loadingScreen = document.getElementById('loading-screen');
@@ -195,6 +196,19 @@
     const inputName = document.getElementById('doc-name');
     const inputId = document.getElementById('doc-id');
     const inputUrl = document.getElementById('url-m3u');
+
+    // Função auxiliar para exibir mensagens temporárias de sucesso
+    function showSuccessMessage(text) {
+        if (messageTimeout) clearTimeout(messageTimeout); // Cancela o temporizador anterior se houver
+        statusMsg.textContent = text;
+        statusMsg.className = "success";
+        
+        // Esconde a mensagem após 4 segundos de forma limpa
+        messageTimeout = setTimeout(() => {
+            statusMsg.textContent = "";
+            statusMsg.className = "";
+        }, 4000);
+    }
 
     // Monitor de Autenticação Inteligente
     onAuthStateChanged(auth, async (user) => {
@@ -329,8 +343,7 @@
 
         try {
             await deleteDoc(doc(db, "devices", idToDelete));
-            statusMsg.textContent = "Dispositivo excluído com sucesso!";
-            statusMsg.className = "success";
+            showSuccessMessage("Dispositivo excluído com sucesso!");
             await fetchAndRenderTable();
         } catch (error) {
             console.error(error);
@@ -366,8 +379,7 @@
                     adminId: currentAdminId
                 });
 
-                statusMsg.textContent = "Dispositivo atualizado com sucesso!";
-                statusMsg.className = "success";
+                showSuccessMessage("Dispositivo atualizado com sucesso!");
                 await fetchAndRenderTable();
                 adminForm.reset();
                 inputId.disabled = false;
@@ -389,8 +401,7 @@
                     adminId: currentAdminId
                 });
 
-                statusMsg.textContent = "Sucesso! Novo dispositivo cadastrado.";
-                statusMsg.className = "success";
+                showSuccessMessage("Sucesso! Novo dispositivo cadastrado.");
                 await fetchAndRenderTable();
                 adminForm.reset();
                 inputId.disabled = false;
