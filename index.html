@@ -337,7 +337,7 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
-                <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
+                <button type="button" id="openAdminModalBtn" class="btn-admin-owner" style="display: flex !important;">
                     <i class="fa-solid fa-user-shield"></i> CADASTRAR ADMIN
                 </button>
                 <button type="button" id="openCadastroModalBtn">
@@ -346,7 +346,7 @@
             </div>
         </div>
 
-        <div id="adminListSection" class="hidden">
+        <div id="adminListSection" style="display: block;">
             <div class="section-title"><i class="fa-solid fa-user-gear"></i> Administradores Cadastrados</div>
             <div class="user-list" id="adminListContainer"></div>
         </div>
@@ -648,16 +648,13 @@
 
             const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
             
-            // CORREÇÃO: Garante o display do botão e da lista de forma forçada sem sumir
+            // LÓGICA INVERSA: Ele já nasce na tela, só escondemos se o login NÃO for adonias@gmail.com
             if (emailLimpo === "adonias@gmail.com") {
-                openAdminModalBtn.classList.remove('hidden');
-                openAdminModalBtn.style.setProperty('display', 'flex', 'important');
-                adminListSection.classList.remove('hidden');
+                console.log("Acesso master confirmado.");
                 listenToAdmins();
             } else {
-                openAdminModalBtn.classList.add('hidden');
                 openAdminModalBtn.style.setProperty('display', 'none', 'important');
-                adminListSection.classList.add('hidden');
+                adminListSection.style.setProperty('display', 'none', 'important');
             }
         } else {
             loginSection.classList.remove('hidden');
