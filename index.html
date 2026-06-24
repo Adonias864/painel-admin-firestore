@@ -648,6 +648,7 @@
 
             const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
             
+            // CORREÇÃO: Garante o display do botão e da lista de forma forçada sem sumir
             if (emailLimpo === "adonias@gmail.com") {
                 openAdminModalBtn.classList.remove('hidden');
                 openAdminModalBtn.style.setProperty('display', 'flex', 'important');
@@ -694,7 +695,6 @@
                 const uidGerado = event.data.uid;
                 const adminEmail = event.data.email;
                 try {
-                    // VOLTOU PARA A COLEÇÃO GLOBAL: Agora as regras do Firebase permitem gravar aqui!
                     await setDoc(doc(db, "administradores", uidGerado), {
                         id: uidGerado,
                         email: adminEmail.toLowerCase(),
@@ -809,7 +809,6 @@
         }
     });
 
-    // VOLTOU PARA A COLEÇÃO GLOBAL: Monitorando a coleção pura 'administradores'
     function listenToAdmins() {
         unsubscribeAdminSnapshot = onSnapshot(collection(db, "administradores"), (snapshot) => {
             adminListContainer.innerHTML = "";
