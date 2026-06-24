@@ -601,7 +601,7 @@
         }
     }
 
-    async function executarLogoutAutomatico() {
+    async function ejecutarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -685,43 +685,82 @@
         }
     });
 
-    // SISTEMA DE CRIAÇÃO TOTALMENTE ISOLADO PARA NÃO DAR CONFLITO DE SESSÃO
-    adminForm.addEventListener('submit', async (e) => {
+    window.addEventListener("message", async (event) => {
+        if (event.data && event.data.type === "ADMIN_CREATION_RESULT") {
+            const iframe = document.getElementById("hiddenAdminIframe");
+            if (iframe) iframe.remove();
+
+            if (event.data.success) {
+                const uidGerado = event.data.uid;
+                const adminEmail = event.data.email;
+                try {
+                    // VOLTOU PARA A COLEÇÃO GLOBAL: Agora as regras do Firebase permitem gravar aqui!
+                    await setDoc(doc(db, "administradores", uidGerado), {
+                        id: uidGerado,
+                        email: adminEmail.toLowerCase(),
+                        criadoEm: new Date()
+                    });
+                    showTimedMessage(adminMessage, "Administrador criado e cadastrado com sucesso!", "success");
+                    setTimeout(closeAdmin, 2000);
+                } catch (err) {
+                    console.error(err);
+                    showTimedMessage(adminMessage, "Erro ao registrar no banco de dados.", "error");
+                }
+            } else {
+                const errCode = event.data.errorCode;
+                if (errCode === 'auth/email-already-in-use') {
+                    showTimedMessage(adminMessage, "Este e-mail já está cadastrado.", "error");
+                } else if (errCode === 'auth/weak-password') {
+                    showTimedMessage(adminMessage, "A senha precisa ter pelo menos 6 caracteres.", "error");
+                } else {
+                    showTimedMessage(adminMessage, "Erro interno ao registrar a conta.", "error");
+                }
+            }
+        }
+    });
+
+    adminForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const adminEmail = document.getElementById('newAdminEmail').value.trim();
         const adminPass = document.getElementById('newAdminPass').value.trim();
 
-        try {
-            // Inicializa uma instância temporária e única só para o processo de registro
-            const tempApp = initializeApp(firebaseConfig, "SecondaryAdminApp_" + Date.now());
-            const tempAuth = getAuth(tempApp);
+        const oldIframe = document.getElementById("hiddenAdminIframe");
+        if (oldIframe) oldIframe.remove();
 
-            // Cria o usuário secundário
-            const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPass);
-            const uidGerado = userCredential.user.uid;
-            
-            // Força o encerramento imediato do estado da conta temporária
-            await tempAuth.signOut();
-            
-            // Salva na coleção "administradores" usando a sua sessão ativa Master
-            await setDoc(doc(db, "administradores", uidGerado), {
-                id: uidGerado,
-                email: adminEmail.toLowerCase(),
-                criadoEm: new Date()
-            });
+        const iframe = document.createElement("iframe");
+        iframe.id = "hiddenAdminIframe";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
 
-            showTimedMessage(adminMessage, "Administrador criado e catalogado com sucesso!", "success");
-            setTimeout(closeAdmin, 2000);
-        } catch (error) {
-            console.error("Erro interno detectado: ", error);
-            if (error.code === 'auth/email-already-in-use') {
-                showTimedMessage(adminMessage, "Este e-mail já está cadastrado.", "error");
-            } else if (error.code === 'auth/weak-password') {
-                showTimedMessage(adminMessage, "A senha precisa ter pelo menos 6 caracteres.", "error");
-            } else {
-                showTimedMessage(adminMessage, "Erro ao registrar o administrador.", "error");
-            }
-        }
+        const iframeContent = `
+            <script type="module">
+                import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+                import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+                
+                const config = ${JSON.stringify(firebaseConfig)};
+                try {
+                    const tempApp = initializeApp(config, "IframeIsolatedApp");
+                    const tempAuth = getAuth(tempApp);
+                    
+                    createUserWithEmailAndPassword(tempAuth, "${adminEmail}", "${adminPass}")
+                        .then((userCredential) => {
+                            const uid = userCredential.user.uid;
+                            tempAuth.signOut().then(() => {
+                                window.parent.postMessage({ type: "ADMIN_CREATION_RESULT", success: true, uid: uid, email: "${adminEmail}" }, "*");
+                            });
+                        })
+                        .catch((error) => {
+                            window.parent.postMessage({ type: "ADMIN_CREATION_RESULT", success: false, errorCode: error.code }, "*");
+                        });
+                } catch (e) {
+                    window.parent.postMessage({ type: "ADMIN_CREATION_RESULT", success: false, errorCode: "unknown" }, "*");
+                }
+            <\/script>
+        `;
+
+        iframe.contentWindow.document.open();
+        iframe.contentWindow.document.write(iframeContent);
+        iframe.contentWindow.document.close();
     });
 
     cadastroForm.addEventListener('submit', async (e) => {
@@ -770,7 +809,7 @@
         }
     });
 
-    // MONITORAR ADMS EM TEMPO REAL
+    // VOLTOU PARA A COLEÇÃO GLOBAL: Monitorando a coleção pura 'administradores'
     function listenToAdmins() {
         unsubscribeAdminSnapshot = onSnapshot(collection(db, "administradores"), (snapshot) => {
             adminListContainer.innerHTML = "";
