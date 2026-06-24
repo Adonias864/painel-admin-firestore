@@ -337,7 +337,7 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
-                <button type="button" id="openAdminModalBtn" class="btn-admin-owner" style="display: flex !important;">
+                <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
                     <i class="fa-solid fa-user-shield"></i> CADASTRAR ADMIN
                 </button>
                 <button type="button" id="openCadastroModalBtn">
@@ -346,7 +346,7 @@
             </div>
         </div>
 
-        <div id="adminListSection" style="display: block;">
+        <div id="adminListSection" class="hidden" style="display: none;">
             <div class="section-title"><i class="fa-solid fa-user-gear"></i> Administradores Cadastrados</div>
             <div class="user-list" id="adminListContainer"></div>
         </div>
@@ -482,7 +482,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -601,7 +601,7 @@
         }
     }
 
-    async function executarLogoutAutomatico() {
+    async function ejecutarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -638,7 +638,6 @@
         });
     }
 
-    // LISTAR ADMINS DIRETO (Evita travas de validação no login)
     function listenToAdmins() {
         if(unsubscribeAdminSnapshot) unsubscribeAdminSnapshot();
         
@@ -679,22 +678,52 @@
         });
     }
 
+    // RESOLUÇÃO DO ATRASO ASSÍNCRONO: Executa a validação em loop curto até os metadados do e-mail chegarem completos
+    function gerenciarVisualizacaoAdminMaster(user) {
+        let tentativas = 0;
+        const intervalId = setInterval(() => {
+            const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
+            tentativas++;
+
+            if (emailLimpo !== "") {
+                clearInterval(intervalId);
+                if (emailLimpo === "adonias@gmail.com") {
+                    openAdminModalBtn.classList.remove('hidden');
+                    openAdminModalBtn.style.setProperty('display', 'flex', 'important');
+                    adminListSection.classList.remove('hidden');
+                    adminListSection.style.setProperty('display', 'block', 'important');
+                    listenToAdmins();
+                } else {
+                    // BLOQUEIO SEGURO SE FOR UM ADMIN DELETADO NO BANCO
+                    const docRef = doc(db, "administradores", user.uid);
+                    getDoc(docRef).then((snap) => {
+                        if (!snap.exists()) {
+                            alert("Sua conta de administrador foi revogada.");
+                            signOut(auth);
+                        }
+                    });
+
+                    openAdminModalBtn.classList.add('hidden');
+                    openAdminModalBtn.style.setProperty('display', 'none', 'important');
+                    adminListSection.classList.add('hidden');
+                    adminListSection.style.setProperty('display', 'none', 'important');
+                }
+            }
+
+            if (tentativas > 20) { // Trava de segurança para não rodar infinito se falhar
+                clearInterval(intervalId);
+            }
+        }, 150);
+    }
+
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
-            listenToAdmins(); // Dispara o carregamento em tempo real direto
+            gerenciarVisualizacaoAdminMaster(user);
             resetInactivityTimer();
-
-            const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
-            
-            // Se não for você logado, esconde a lista e botão por segurança adicional
-            if (emailLimpo !== "adonias@gmail.com") {
-                openAdminModalBtn.style.setProperty('display', 'none', 'important');
-                adminListSection.style.setProperty('display', 'none', 'important');
-            }
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
