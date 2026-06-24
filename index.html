@@ -648,7 +648,6 @@
 
             const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
             
-            // SE FOR VOCÊ: Mostra o botão e a lista de Admins
             if (emailLimpo === "adonias@gmail.com") {
                 openAdminModalBtn.classList.remove('hidden');
                 openAdminModalBtn.style.setProperty('display', 'flex', 'important');
@@ -686,21 +685,25 @@
         }
     });
 
-    // CRIAÇÃO DO ADMIN COM DUPLO PROCESSO (AUTH + BANCO FIRESTORE)
+    // SISTEMA DE CRIAÇÃO TOTALMENTE ISOLADO PARA NÃO DAR CONFLITO DE SESSÃO
     adminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const adminEmail = document.getElementById('newAdminEmail').value.trim();
         const adminPass = document.getElementById('newAdminPass').value.trim();
 
         try {
-            const tempApp = initializeApp(firebaseConfig, "SecondaryAdminApp");
+            // Inicializa uma instância temporária e única só para o processo de registro
+            const tempApp = initializeApp(firebaseConfig, "SecondaryAdminApp_" + Date.now());
             const tempAuth = getAuth(tempApp);
 
+            // Cria o usuário secundário
             const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPass);
             const uidGerado = userCredential.user.uid;
+            
+            // Força o encerramento imediato do estado da conta temporária
             await tempAuth.signOut();
             
-            // Salva na coleção "administradores" para você poder gerenciar na lista
+            // Salva na coleção "administradores" usando a sua sessão ativa Master
             await setDoc(doc(db, "administradores", uidGerado), {
                 id: uidGerado,
                 email: adminEmail.toLowerCase(),
@@ -710,8 +713,11 @@
             showTimedMessage(adminMessage, "Administrador criado e catalogado com sucesso!", "success");
             setTimeout(closeAdmin, 2000);
         } catch (error) {
+            console.error("Erro interno detectado: ", error);
             if (error.code === 'auth/email-already-in-use') {
                 showTimedMessage(adminMessage, "Este e-mail já está cadastrado.", "error");
+            } else if (error.code === 'auth/weak-password') {
+                showTimedMessage(adminMessage, "A senha precisa ter pelo menos 6 caracteres.", "error");
             } else {
                 showTimedMessage(adminMessage, "Erro ao registrar o administrador.", "error");
             }
@@ -764,7 +770,7 @@
         }
     });
 
-    // MONITORAR ADMS EM TEMPO REAL (EXCLUSIVO DO SEU PERFIL)
+    // MONITORAR ADMS EM TEMPO REAL
     function listenToAdmins() {
         unsubscribeAdminSnapshot = onSnapshot(collection(db, "administradores"), (snapshot) => {
             adminListContainer.innerHTML = "";
