@@ -14,9 +14,9 @@
             --card-bg: #1a2236;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
-            --primary: #f59e0b; /* Laranja Firestore */
+            --primary: #f59e0b;
             --primary-hover: #d97706;
-            --accent: #ff743d; /* Coral Firestore */
+            --accent: #ff743d;
             --success: #10b981;
             --error: #ef4444;
             --border: #2e3b56;
@@ -33,8 +33,6 @@
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
-
-            /* CONFIGURAÇÃO PARA RESPONSIVIDADE EM SMART TVs E CELULARES */
             background-position: center center;
             background-repeat: no-repeat;
             background-size: cover;
@@ -330,7 +328,7 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
-                <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden">
+                <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
                     <i class="fa-solid fa-user-shield"></i> CADASTRAR ADMIN
                 </button>
                 <button type="button" id="openCadastroModalBtn">
@@ -603,7 +601,7 @@
         }
     }
 
-    async function ejecutarLogoutAutomatico() {
+    async function executarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -651,13 +649,15 @@
             listenToUsers();
             resetInactivityTimer();
 
-            // SINCALIZAÇÃO FORÇADA: Ignora o CSS e mostra o botão na hora apenas para adonias@gmail.com
-            if (user.email && String(user.email).trim().toLowerCase() === "adonias@gmail.com") {
-                openAdminModalBtn.style.setProperty('display', 'flex', 'important');
+            // VALIDAÇÃO BLINDADA: Trata espaços e letras antes de validar o e-mail Master
+            const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
+            
+            if (emailLimpo === "adonias@gmail.com") {
                 openAdminModalBtn.classList.remove('hidden');
+                openAdminModalBtn.style.setProperty('display', 'flex', 'important');
             } else {
-                openAdminModalBtn.style.setProperty('display', 'none', 'important');
                 openAdminModalBtn.classList.add('hidden');
+                openAdminModalBtn.style.setProperty('display', 'none', 'important');
             }
         } else {
             loginSection.classList.remove('hidden');
@@ -673,7 +673,6 @@
     setupInactivityListeners();
     carregarWallpaperTempoReal();
 
-    // Login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -686,7 +685,6 @@
         }
     });
 
-    // SISTEMA DE CRIAÇÃO DIRETA DE ADMIN SEM DESLOGAR A CONTA ATUAL
     adminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const adminEmail = document.getElementById('newAdminEmail').value.trim();
