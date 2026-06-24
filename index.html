@@ -487,7 +487,6 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    // Adicionado o 'initializeApp' e 'createUserWithEmailAndPassword' nos métodos
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -652,10 +651,12 @@
             listenToUsers();
             resetInactivityTimer();
 
-            // Libera o botão verde apenas se o e-mail logado for adonias@gmail.com
-            if (user.email === "adonias@gmail.com") {
+            // SINCALIZAÇÃO FORÇADA: Ignora o CSS e mostra o botão na hora apenas para adonias@gmail.com
+            if (user.email && String(user.email).trim().toLowerCase() === "adonias@gmail.com") {
+                openAdminModalBtn.style.setProperty('display', 'flex', 'important');
                 openAdminModalBtn.classList.remove('hidden');
             } else {
+                openAdminModalBtn.style.setProperty('display', 'none', 'important');
                 openAdminModalBtn.classList.add('hidden');
             }
         } else {
@@ -692,14 +693,10 @@
         const adminPass = document.getElementById('newAdminPass').value.trim();
 
         try {
-            // Cria uma segunda instância temporária do Firebase apenas para registrar a nova conta
             const tempApp = initializeApp(firebaseConfig, "SecondaryAdminApp");
             const tempAuth = getAuth(tempApp);
 
-            // Registra diretamente na tabela Authentication do projeto do Firebase
             await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPass);
-            
-            // Finaliza e destrói o app temporário para liberar memória
             await tempAuth.signOut();
             
             showTimedMessage(adminMessage, "Administrador criado com sucesso no Authentication!", "success");
