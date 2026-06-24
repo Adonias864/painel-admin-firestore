@@ -344,3 +344,400 @@
                     <i class="fa-solid fa-tv main-icon"></i>
                     <input type="text" id="docId" placeholder="Ex: 234623864" required>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dnsValue">URL do Servidor (DNS)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-server main-icon"></i>
+                    <input type="url" id="dnsValue" placeholder="http://exemplo.com:8080" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="userValue">Usuário</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user main-icon"></i>
+                    <input type="text" id="userValue" placeholder="Digite o usuário" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="passValue">Senha</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock main-icon"></i>
+                    <input type="password" id="passValue" placeholder="Digite a senha" required>
+                    <i class="fa-solid fa-eye toggle-password" data-target="passValue"></i>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-secondary id-cancel-cadastro" style="flex:1;">Cancelar</button>
+                <button type="submit" style="flex:2;"><i class="fa-solid fa-check"></i> Ativar App</button>
+            </div>
+        </form>
+
+        <div class="message-box" id="cadastroMessage"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editModalOverlay">
+    <div class="modal-card">
+        <button class="modal-close" id="closeEditModalBtn">&times;</button>
+        <div class="header" style="margin-bottom: 20px;">
+            <h2 style="font-size: 22px; color: var(--primary);">Editar Credenciais</h2>
+            <p id="editModalSubtitle">Modificando dados do dispositivo</p>
+        </div>
+
+        <form id="editForm">
+            <div class="form-group">
+                <label>ID do Aparelho (Não modificável)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-tv main-icon"></i>
+                    <input type="text" id="editDocId" disabled>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="editDnsValue">URL do Servidor (DNS)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-server main-icon"></i>
+                    <input type="url" id="editDnsValue" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="editUserValue">Usuário</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user main-icon"></i>
+                    <input type="text" id="editUserValue" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="editPassValue">Senha</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock main-icon"></i>
+                    <input type="password" id="editPassValue" required>
+                    <i class="fa-solid fa-eye toggle-password" data-target="editPassValue"></i>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-secondary id-cancel-edit" style="flex:1;">Cancelar</button>
+                <button type="submit" style="flex:2;"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
+            </div>
+        </form>
+
+        <div class="message-box" id="editMessage"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
+        authDomain: "fire-plus-streaming-app.firebaseapp.com",
+        projectId: "fire-plus-streaming-app",
+        storageBucket: "fire-plus-streaming-app.firebasestorage.app",
+        messagingSenderId: "188055190455",
+        appId: "1:188055190455:web:d5110a77ce57f1aa9ac632"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // CORREÇÃO ESSENCIAL: Definir a persistência padrão globalmente antes do estado inicial rodar
+    setPersistence(auth, browserSessionPersistence).catch((err) => {
+        console.error("Erro ao definir persistência inicial:", err);
+    });
+
+    const loadingSection = document.getElementById('loadingSection');
+    const loginSection = document.getElementById('loginSection');
+    const painelSection = document.getElementById('painelSection');
+    const loginForm = document.getElementById('loginForm');
+    const userListContainer = document.getElementById('userListContainer');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const cadastroModalOverlay = document.getElementById('cadastroModalOverlay');
+    const openCadastroModalBtn = document.getElementById('openCadastroModalBtn');
+    const closeCadastroModalBtn = document.getElementById('closeCadastroModalBtn');
+    const cancelCadastroBtn = document.querySelector('.id-cancel-cadastro');
+    const cadastroForm = document.getElementById('cadastroForm');
+    const cadastroMessage = document.getElementById('cadastroMessage');
+
+    const editModalOverlay = document.getElementById('editModalOverlay');
+    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+    const cancelEditBtn = document.querySelector('.id-cancel-edit');
+    const editForm = document.getElementById('editForm');
+    const editMessage = document.getElementById('editMessage');
+    const editModalSubtitle = document.getElementById('editModalSubtitle');
+    
+    const editDocIdInput = document.getElementById('editDocId');
+    const editDnsInput = document.getElementById('editDnsValue');
+    const editUserInput = document.getElementById('editUserValue');
+    const editPassInput = document.getElementById('editPassValue');
+
+    let unsubscribeSnapshot = null;
+    let inactivityTimeout = null;
+    
+    const INACTIVITY_TIME = 15 * 60 * 1000; 
+
+    function showTimedMessage(element, text, type) {
+        element.style.display = "block";
+        element.className = "message-box " + type;
+        element.textContent = text;
+        setTimeout(() => {
+            element.style.display = "none";
+            element.className = "message-box";
+            element.textContent = "";
+        }, 4000);
+    }
+
+    document.querySelectorAll('.toggle-password').forEach(eyeIcon => {
+        eyeIcon.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                e.currentTarget.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordInput.type = "password";
+                e.currentTarget.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    });
+
+    function openCadastro() { cadastroModalOverlay.classList.add('active'); }
+    function closeCadastro() { cadastroModalOverlay.classList.remove('active'); cadastroForm.reset(); resetEyeIcons(); }
+    openCadastroModalBtn.addEventListener('click', openCadastro);
+    closeCadastroModalBtn.addEventListener('click', closeCadastro);
+    cancelCadastroBtn.addEventListener('click', closeCadastro);
+
+    function openEdit() { editModalOverlay.classList.add('active'); }
+    function closeEdit() { editModalOverlay.classList.remove('active'); editForm.reset(); resetEyeIcons(); }
+    closeEditModalBtn.addEventListener('click', closeEdit);
+    cancelEditBtn.addEventListener('click', closeEdit);
+
+    function resetEyeIcons() {
+        document.querySelectorAll('.toggle-password').forEach(icon => {
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        });
+        document.getElementById('passValue').type = "password";
+        document.getElementById('editPassValue').type = "password";
+    }
+
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimeout);
+        if (auth.currentUser) {
+            inactivityTimeout = setTimeout(executarLogoutAutomatico, INACTIVITY_TIME);
+        }
+    }
+
+    async function ejecutarLogoutAutomatico() {
+        if (auth.currentUser) {
+            try {
+                loadingSection.classList.remove('hidden');
+                painelSection.classList.add('hidden');
+                closeCadastro();
+                closeEdit();
+                await signOut(auth);
+                alert("Sessão encerrada por inatividade.");
+            } catch (error) {
+                loadingSection.classList.add('hidden');
+                painelSection.classList.remove('hidden');
+            }
+        }
+    }
+
+    function setupInactivityListeners() {
+        const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
+        events.forEach(eventName => {
+            window.addEventListener(eventName, resetInactivityTimer, true);
+        });
+    }
+
+    function carregarWallpaperTempoReal() {
+        const configDocRef = doc(db, "configuracao", "app");
+        
+        onSnapshot(configDocRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                const urlImagem = data.wallpaperurl;
+                if (urlImagem && urlImagem.trim() !== "") {
+                    document.body.style.backgroundImage = `url('${urlImagem}')`;
+                }
+            }
+        }, (error) => {
+            console.error("Erro ao ler o wallpaper: ", error);
+        });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        loadingSection.classList.add('hidden'); // Destrava a tela de loading sempre
+        if (user) {
+            loginSection.classList.add('hidden');
+            painelSection.classList.remove('hidden');
+            listenToUsers();
+            resetInactivityTimer();
+        } else {
+            loginSection.classList.remove('hidden');
+            painelSection.classList.add('hidden');
+            closeCadastro();
+            closeEdit();
+            clearTimeout(inactivityTimeout);
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        }
+    });
+
+    setupInactivityListeners();
+    carregarWallpaperTempoReal();
+
+    // Login
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value.trim();
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+            loginForm.reset();
+        } catch (error) {
+            alert("E-mail ou senha incorretos.");
+        }
+    });
+
+    cadastroForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const docId = document.getElementById('docId').value.trim();
+        const dnsValue = document.getElementById('dnsValue').value.trim();
+        const userValue = document.getElementById('userValue').value.trim();
+        const passValue = document.getElementById('passValue').value.trim();
+        
+        try {
+            await setDoc(doc(db, "clientes", docId), {
+                id: docId,
+                dns: dnsValue,
+                username: userValue,
+                password: passValue,
+                adminId: auth.currentUser.uid,
+                vinculadoEm: new Date()
+            });
+            showTimedMessage(cadastroMessage, "Aparelho ativado com sucesso!", "success");
+            setTimeout(closeCadastro, 1500);
+        } catch (error) {
+            showTimedMessage(cadastroMessage, "Erro ao salvar os dados.", "error");
+        }
+    });
+
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const docId = editDocIdInput.value;
+        const dnsValue = editDnsInput.value.trim();
+        const userValue = editUserInput.value.trim();
+        const passValue = editPassInput.value.trim();
+
+        try {
+            await setDoc(doc(db, "clientes", docId), {
+                id: docId,
+                dns: dnsValue,
+                username: userValue,
+                password: passValue,
+                adminId: auth.currentUser.uid,
+                vinculadoEm: new Date()
+            });
+            showTimedMessage(editMessage, "Cadastro atualizado com sucesso!", "success");
+            setTimeout(closeEdit, 1500);
+        } catch (error) {
+            showTimedMessage(editMessage, "Erro ao atualizar os dados.", "error");
+        }
+    });
+
+    function listenToUsers() {
+        if (!auth.currentUser) return;
+
+        const q = query(collection(db, "clientes"), where("adminId", "==", auth.currentUser.uid));
+
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+            userListContainer.innerHTML = "";
+            if(snapshot.empty) {
+                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Você não possui nenhum dispositivo ativado.</p>`;
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const card = document.createElement('div');
+                card.className = "user-card";
+                
+                card.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-id"><i class="fa-solid fa-tv"></i> ID: ${data.id}</span>
+                        <span class="user-details">User: ${data.username} | Server: ${data.dns}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-icon btn-edit" title="Editar dados" 
+                                data-id="${data.id}" 
+                                data-dns="${data.dns || ''}" 
+                                data-user="${data.username || ''}" 
+                                data-pass="${data.password || ''}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" title="Excluir" data-id="${data.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                userListContainer.appendChild(card);
+            });
+
+            userListContainer.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const b = e.currentTarget;
+                    prepararEdicao(
+                        b.getAttribute('data-id'), 
+                        b.getAttribute('data-dns'), 
+                        b.getAttribute('data-user'), 
+                        b.getAttribute('data-pass')
+                    );
+                });
+            });
+
+            userListContainer.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    if(confirm(`Deseja mesmo remover o acesso do ID ${id}?`)) {
+                        deleteDoc(doc(db, "clientes", id));
+                    }
+                });
+            });
+        });
+    }
+
+    function prepararEdicao(id, dns, user, pass) {
+        editDocIdInput.value = id;
+        editDnsInput.value = dns;
+        editUserInput.value = user;
+        editPassInput.value = pass;
+        editModalSubtitle.textContent = "ID do Dispositivo: " + id;
+        openEdit();
+    }
+
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            loadingSection.classList.remove('hidden');
+            painelSection.classList.add('hidden');
+            await signOut(auth);
+        } catch (error) {
+            loadingSection.classList.add('hidden');
+            painelSection.classList.remove('hidden');
+        }
+    });
+</script>
+
+</body>
+</html>
