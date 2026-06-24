@@ -155,6 +155,11 @@
             gap: 10px;
         }
 
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
         button {
             padding: 12px 20px;
             background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -186,6 +191,11 @@
             border: 1px solid var(--border);
         }
         button.btn-secondary:hover { background: #3d4f74; }
+
+        button.btn-admin-owner {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+        }
 
         .modal-overlay {
             position: fixed;
@@ -319,9 +329,14 @@
             <button type="button" class="btn-logout" id="logoutBtn" title="Fazer Logout">
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
-            <button type="button" id="openCadastroModalBtn">
-                <i class="fa-solid fa-user-plus"></i> CADASTRAR USUÁRIO
-            </button>
+            <div class="button-group">
+                <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden">
+                    <i class="fa-solid fa-user-shield"></i> CADASTRAR ADMIN
+                </button>
+                <button type="button" id="openCadastroModalBtn">
+                    <i class="fa-solid fa-user-plus"></i> CADASTRAR USUÁRIO
+                </button>
+            </div>
         </div>
 
         <div class="user-list" id="userListContainer">
@@ -381,6 +396,42 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="adminModalOverlay">
+    <div class="modal-card">
+        <button class="modal-close" id="closeAdminModalBtn">&times;</button>
+        <div class="header" style="margin-bottom: 20px;">
+            <h2 style="font-size: 22px; color: #10b981;">Criar Novo Administrador</h2>
+            <p>Cadastra direto no Authentication do Firebase</p>
+        </div>
+
+        <form id="adminForm">
+            <div class="form-group">
+                <label for="newAdminEmail">E-mail do Novo Admin</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope main-icon"></i>
+                    <input type="email" id="newAdminEmail" placeholder="revendedor@email.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newAdminPass">Senha de Acesso</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock main-icon"></i>
+                    <input type="password" id="newAdminPass" placeholder="Mínimo 6 caracteres" required>
+                    <i class="fa-solid fa-eye toggle-password" data-target="newAdminPass"></i>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-secondary id-cancel-admin" style="flex:1;">Cancelar</button>
+                <button type="submit" style="flex:2; background: linear-gradient(135deg, #10b981, #059669); color: white;"><i class="fa-solid fa-user-plus"></i> Criar Conta Admin</button>
+            </div>
+        </form>
+
+        <div class="message-box" id="adminMessage"></div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="editModalOverlay">
     <div class="modal-card">
         <button class="modal-close" id="closeEditModalBtn">&times;</button>
@@ -436,7 +487,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    // Adicionado o 'initializeApp' e 'createUserWithEmailAndPassword' nos métodos
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
@@ -451,7 +503,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // CORREÇÃO ESSENCIAL: Definir a persistência padrão globalmente antes do estado inicial rodar
     setPersistence(auth, browserSessionPersistence).catch((err) => {
         console.error("Erro ao definir persistência inicial:", err);
     });
@@ -469,6 +520,13 @@
     const cancelCadastroBtn = document.querySelector('.id-cancel-cadastro');
     const cadastroForm = document.getElementById('cadastroForm');
     const cadastroMessage = document.getElementById('cadastroMessage');
+
+    const adminModalOverlay = document.getElementById('adminModalOverlay');
+    const openAdminModalBtn = document.getElementById('openAdminModalBtn');
+    const closeAdminModalBtn = document.getElementById('closeAdminModalBtn');
+    const cancelAdminBtn = document.querySelector('.id-cancel-admin');
+    const adminForm = document.getElementById('adminForm');
+    const adminMessage = document.getElementById('adminMessage');
 
     const editModalOverlay = document.getElementById('editModalOverlay');
     const closeEditModalBtn = document.getElementById('closeEditModalBtn');
@@ -519,6 +577,12 @@
     closeCadastroModalBtn.addEventListener('click', closeCadastro);
     cancelCadastroBtn.addEventListener('click', closeCadastro);
 
+    function openAdmin() { adminModalOverlay.classList.add('active'); }
+    function closeAdmin() { adminModalOverlay.classList.remove('active'); adminForm.reset(); resetEyeIcons(); }
+    openAdminModalBtn.addEventListener('click', openAdmin);
+    closeAdminModalBtn.addEventListener('click', closeAdmin);
+    cancelAdminBtn.addEventListener('click', closeAdmin);
+
     function openEdit() { editModalOverlay.classList.add('active'); }
     function closeEdit() { editModalOverlay.classList.remove('active'); editForm.reset(); resetEyeIcons(); }
     closeEditModalBtn.addEventListener('click', closeEdit);
@@ -530,6 +594,7 @@
         });
         document.getElementById('passValue').type = "password";
         document.getElementById('editPassValue').type = "password";
+        document.getElementById('newAdminPass').type = "password";
     }
 
     function resetInactivityTimer() {
@@ -546,6 +611,7 @@
                 painelSection.classList.add('hidden');
                 closeCadastro();
                 closeEdit();
+                closeAdmin();
                 await signOut(auth);
                 alert("Sessão encerrada por inatividade.");
             } catch (error) {
@@ -579,17 +645,25 @@
     }
 
     onAuthStateChanged(auth, (user) => {
-        loadingSection.classList.add('hidden'); // Destrava a tela de loading sempre
+        loadingSection.classList.add('hidden');
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
             resetInactivityTimer();
+
+            // Libera o botão verde apenas se o e-mail logado for adonias@gmail.com
+            if (user.email === "adonias@gmail.com") {
+                openAdminModalBtn.classList.remove('hidden');
+            } else {
+                openAdminModalBtn.classList.add('hidden');
+            }
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
             closeCadastro();
             closeEdit();
+            closeAdmin();
             clearTimeout(inactivityTimeout);
             if (unsubscribeSnapshot) unsubscribeSnapshot();
         }
@@ -608,6 +682,36 @@
             loginForm.reset();
         } catch (error) {
             alert("E-mail ou senha incorretos.");
+        }
+    });
+
+    // SISTEMA DE CRIAÇÃO DIRETA DE ADMIN SEM DESLOGAR A CONTA ATUAL
+    adminForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const adminEmail = document.getElementById('newAdminEmail').value.trim();
+        const adminPass = document.getElementById('newAdminPass').value.trim();
+
+        try {
+            // Cria uma segunda instância temporária do Firebase apenas para registrar a nova conta
+            const tempApp = initializeApp(firebaseConfig, "SecondaryAdminApp");
+            const tempAuth = getAuth(tempApp);
+
+            // Registra diretamente na tabela Authentication do projeto do Firebase
+            await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPass);
+            
+            // Finaliza e destrói o app temporário para liberar memória
+            await tempAuth.signOut();
+            
+            showTimedMessage(adminMessage, "Administrador criado com sucesso no Authentication!", "success");
+            setTimeout(closeAdmin, 2000);
+        } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+                showTimedMessage(adminMessage, "Este e-mail já está cadastrado no Firebase.", "error");
+            } else if (error.code === 'auth/weak-password') {
+                showTimedMessage(adminMessage, "A senha deve conter pelo menos 6 caracteres.", "error");
+            } else {
+                showTimedMessage(adminMessage, "Erro ao registrar no Authentication.", "error");
+            }
         }
     });
 
