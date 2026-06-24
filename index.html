@@ -483,7 +483,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDjv_fqiy5C75ivPCHyr8FIxS99l5UCQ_E",
@@ -601,7 +601,7 @@
         }
     }
 
-    async function ejecutarLogoutAutomatico() {
+    async function executarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -638,21 +638,60 @@
         });
     }
 
+    // LISTAR ADMINS DIRETO (Evita travas de validação no login)
+    function listenToAdmins() {
+        if(unsubscribeAdminSnapshot) unsubscribeAdminSnapshot();
+        
+        unsubscribeAdminSnapshot = onSnapshot(collection(db, "administradores"), (snapshot) => {
+            adminListContainer.innerHTML = "";
+            if (snapshot.empty) {
+                adminListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 15px;">Nenhum administrador secundário cadastrado.</p>`;
+                return;
+            }
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const card = document.createElement('div');
+                card.className = "user-card";
+                card.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-id admin-tag"><i class="fa-solid fa-user-shield"></i> ${data.email}</span>
+                        <span class="user-details">UID: ${data.id}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-icon btn-delete delete-admin-btn" title="Remover Admin" data-id="${data.id}" data-email="${data.email}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                adminListContainer.appendChild(card);
+            });
+
+            adminListContainer.querySelectorAll('.delete-admin-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const email = e.currentTarget.getAttribute('data-email');
+                    if (confirm(`Deseja remover o acesso de administrador do e-mail ${email}?\nEle perderá o acesso ao painel instantaneamente.`)) {
+                        deleteDoc(doc(db, "administradores", id));
+                    }
+                });
+            });
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         loadingSection.classList.add('hidden');
         if (user) {
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
+            listenToAdmins(); // Dispara o carregamento em tempo real direto
             resetInactivityTimer();
 
             const emailLimpo = user.email ? String(user.email).trim().toLowerCase() : "";
             
-            // LÓGICA INVERSA: Ele já nasce na tela, só escondemos se o login NÃO for adonias@gmail.com
-            if (emailLimpo === "adonias@gmail.com") {
-                console.log("Acesso master confirmado.");
-                listenToAdmins();
-            } else {
+            // Se não for você logado, esconde a lista e botão por segurança adicional
+            if (emailLimpo !== "adonias@gmail.com") {
                 openAdminModalBtn.style.setProperty('display', 'none', 'important');
                 adminListSection.style.setProperty('display', 'none', 'important');
             }
@@ -805,44 +844,6 @@
             showTimedMessage(editMessage, "Erro ao atualizar os dados.", "error");
         }
     });
-
-    function listenToAdmins() {
-        unsubscribeAdminSnapshot = onSnapshot(collection(db, "administradores"), (snapshot) => {
-            adminListContainer.innerHTML = "";
-            if (snapshot.empty) {
-                adminListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 15px;">Nenhum administrador secundário cadastrado.</p>`;
-                return;
-            }
-
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const card = document.createElement('div');
-                card.className = "user-card";
-                card.innerHTML = `
-                    <div class="user-info">
-                        <span class="user-id admin-tag"><i class="fa-solid fa-user-shield"></i> ${data.email}</span>
-                        <span class="user-details">UID: ${data.id}</span>
-                    </div>
-                    <div class="user-actions">
-                        <button class="btn-icon btn-delete delete-admin-btn" title="Remover Admin" data-id="${data.id}" data-email="${data.email}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                adminListContainer.appendChild(card);
-            });
-
-            adminListContainer.querySelectorAll('.delete-admin-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
-                    const email = e.currentTarget.getAttribute('data-email');
-                    if (confirm(`Deseja remover o acesso de administrador do e-mail ${email}?\nEle perderá o acesso ao painel instantaneamente.`)) {
-                        deleteDoc(doc(db, "administradores", id));
-                    }
-                });
-            });
-        });
-    }
 
     function listenToUsers() {
         if (!auth.currentUser) return;
