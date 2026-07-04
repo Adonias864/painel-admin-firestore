@@ -365,6 +365,13 @@
         </div>
         <form id="cadastroForm">
             <div class="form-group">
+                <label for="clienteNome">Nome do Cliente</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user-tag main-icon"></i>
+                    <input type="text" id="clienteNome" placeholder="Ex: João Silva" required>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="docId">ID do Aparelho (Cliente)</label>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-tv main-icon"></i>
@@ -442,6 +449,13 @@
             <p id="editModalSubtitle">Modificando dados do dispositivo</p>
         </div>
         <form id="editForm">
+            <div class="form-group">
+                <label for="editClienteNome">Nome do Cliente</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user-tag main-icon"></i>
+                    <input type="text" id="editClienteNome" required>
+                </div>
+            </div>
             <div class="form-group">
                 <label>ID do Aparelho (Não modificável)</label>
                 <div class="input-wrapper">
@@ -536,6 +550,9 @@
     const editDnsInput = document.getElementById('editDnsValue');
     const editUserInput = document.getElementById('editUserValue');
     const editPassInput = document.getElementById('editPassValue');
+    // Mapeamento dos novos inputs do nome
+    const clienteNomeInput = document.getElementById('clienteNome');
+    const editClienteNomeInput = document.getElementById('editClienteNome');
 
     let unsubscribeSnapshot = null;
     let unsubscribeAdminSnapshot = null;
@@ -601,7 +618,7 @@
         }
     }
 
-    async function ejecutarLogoutAutomatico() {
+    async function executarLogoutAutomatico() {
         if (auth.currentUser) {
             try {
                 loadingSection.classList.remove('hidden');
@@ -678,7 +695,6 @@
         });
     }
 
-    // RESOLUÇÃO DO ATRASO ASSÍNCRONO: Executa a validação em loop curto até os metadados do e-mail chegarem completos
     function gerenciarVisualizacaoAdminMaster(user) {
         let tentativas = 0;
         const intervalId = setInterval(() => {
@@ -694,7 +710,6 @@
                     adminListSection.style.setProperty('display', 'block', 'important');
                     listenToAdmins();
                 } else {
-                    // BLOQUEIO SEGURO SE FOR UM ADMIN DELETADO NO BANCO
                     const docRef = doc(db, "administradores", user.uid);
                     getDoc(docRef).then((snap) => {
                         if (!snap.exists()) {
@@ -710,7 +725,7 @@
                 }
             }
 
-            if (tentativas > 20) { // Trava de segurança para não rodar infinito se falhar
+            if (tentativas > 20) {
                 clearInterval(intervalId);
             }
         }, 150);
@@ -830,6 +845,7 @@
 
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const nomeValue = clienteNomeInput.value.trim(); // Captura o Nome
         const docId = document.getElementById('docId').value.trim();
         const dnsValue = document.getElementById('dnsValue').value.trim();
         const userValue = document.getElementById('userValue').value.trim();
@@ -838,6 +854,7 @@
         try {
             await setDoc(doc(db, "clientes", docId), {
                 id: docId,
+                nomeCliente: nomeValue, // Salva o nome do Cliente no Firestore
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
@@ -854,6 +871,7 @@
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = editDocIdInput.value;
+        const nomeValue = editClienteNomeInput.value.trim(); // Captura o Nome Editado
         const dnsValue = editDnsInput.value.trim();
         const userValue = editUserInput.value.trim();
         const passValue = editPassInput.value.trim();
@@ -861,6 +879,7 @@
         try {
             await setDoc(doc(db, "clientes", docId), {
                 id: docId,
+                nomeCliente: nomeValue, // Atualiza o nome do Cliente no Firestore
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
@@ -889,14 +908,19 @@
                 const data = doc.data();
                 const card = document.createElement('div');
                 card.className = "user-card";
+                
+                // Exibe o Nome do Cliente em destaque se ele existir no banco
+                const exibicaoNome = data.nomeCliente ? `<div style="font-size: 15px; font-weight: bold; color: #ffffff; margin-bottom: 2px;"><i class="fa-solid fa-user"></i> ${data.nomeCliente}</div>` : '';
+
                 card.innerHTML = `
                     <div class="user-info">
+                        ${exibicaoNome}
                         <span class="user-id"><i class="fa-solid fa-tv"></i> ID: ${data.id}</span>
                         <span class="user-details">User: ${data.username} | Server: ${data.dns}</span>
                     </div>
                     <div class="user-actions">
                         <button class="btn-icon btn-edit" title="Editar dados" 
-                                data-id="${data.id}" data-dns="${data.dns || ''}" data-user="${data.username || ''}" data-pass="${data.password || ''}">
+                                data-id="${data.id}" data-nome="${data.nomeCliente || ''}" data-dns="${data.dns || ''}" data-user="${data.username || ''}" data-pass="${data.password || ''}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
                         <button class="btn-icon btn-delete" title="Excluir" data-id="${data.id}">
@@ -910,7 +934,13 @@
             userListContainer.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const b = e.currentTarget;
-                    prepararEdicao(b.getAttribute('data-id'), b.getAttribute('data-dns'), b.getAttribute('data-user'), b.getAttribute('data-pass'));
+                    prepararEdicao(
+                        b.getAttribute('data-id'), 
+                        b.getAttribute('data-nome'), // Passa o parâmetro do nome para a edição
+                        b.getAttribute('data-dns'), 
+                        b.getAttribute('data-user'), 
+                        b.getAttribute('data-pass')
+                    );
                 });
             });
 
@@ -925,8 +955,9 @@
         });
     }
 
-    function prepararEdicao(id, dns, user, pass) {
+    function prepararEdicao(id, nome, dns, user, pass) {
         editDocIdInput.value = id;
+        editClienteNomeInput.value = nome; // preenche o input do nome na edição
         editDnsInput.value = dns;
         editUserInput.value = user;
         editPassInput.value = pass;
