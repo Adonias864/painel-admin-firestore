@@ -149,6 +149,7 @@
         .button-group {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -288,6 +289,29 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none !important; }
+
+        /* AJUSTE EXCLUSIVO PARA TELAS DE CELULAR */
+        @media (max-width: 500px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .btn-logout {
+                width: 100%;
+            }
+            .button-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Força os botões a ficarem sempre em pares lado a lado */
+                gap: 10px;
+                width: 100%;
+            }
+            .button-group button {
+                width: 100%;
+                font-size: 12px; /* Reduz ligeiramente a fonte para não quebrar linha no botão */
+                padding: 10px 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -337,17 +361,18 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
-                <button type="button" id="toggleAdminsBtn" class="btn-secondary hidden" style="display: none;">
-                    <i class="fa-solid fa-user-shield"></i> ADMINS
-                </button>
                 <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
                     <i class="fa-solid fa-user-plus"></i> NOVO ADMIN
                 </button>
+                <button type="button" id="openCadastroModalBtn">
+                    <i class="fa-solid fa-user-plus"></i> CADASTRAR
+                </button>
+
+                <button type="button" id="toggleAdminsBtn" class="btn-secondary hidden" style="display: none;">
+                    <i class="fa-solid fa-user-shield"></i> ADMINS
+                </button>
                 <button type="button" id="toggleClientesBtn" class="btn-secondary">
                     <i class="fa-solid fa-users"></i> CLIENTES
-                </button>
-                <button type="button" id="openCadastroModalBtn">
-                    <i class="fa-solid fa-user-plus"></i> CADASTRAR USUÁRIO
                 </button>
             </div>
         </div>
@@ -651,7 +676,7 @@
                 await signOut(auth);
                 alert("Sessão encerrada por inatividade.");
             } catch (error) {
-                loadingSection.classList.add('hidden');
+                loadingSection.add('hidden');
                 painelSection.classList.remove('hidden');
             }
         }
