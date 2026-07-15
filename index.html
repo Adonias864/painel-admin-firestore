@@ -302,13 +302,13 @@
             }
             .button-group {
                 display: grid;
-                grid-template-columns: 1fr 1fr; /* Força os botões a ficarem sempre em pares lado a lado */
+                grid-template-columns: 1fr 1fr;
                 gap: 10px;
                 width: 100%;
             }
             .button-group button {
                 width: 100%;
-                font-size: 12px; /* Reduz ligeiramente a fonte para não quebrar linha no botão */
+                font-size: 12px;
                 padding: 10px 5px;
             }
         }
@@ -361,6 +361,7 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
+                <!-- LINHA 1 (Topo): Novo Admin e Cadastrar Usuário -->
                 <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
                     <i class="fa-solid fa-user-plus"></i> NOVO ADMIN
                 </button>
@@ -368,6 +369,7 @@
                     <i class="fa-solid fa-user-plus"></i> CADASTRAR
                 </button>
 
+                <!-- LINHA 2 (Baixo): Admins e Clientes -->
                 <button type="button" id="toggleAdminsBtn" class="btn-secondary hidden" style="display: none;">
                     <i class="fa-solid fa-user-shield"></i> ADMINS
                 </button>
@@ -377,16 +379,19 @@
             </div>
         </div>
 
-        <div id="adminListSection" class="hidden" style="display: none;">
+        <!-- Seção de Administradores (Inicia oculta) -->
+        <div id="adminListSection" class="hidden">
             <div class="section-title"><i class="fa-solid fa-user-gear"></i> Administradores Cadastrados</div>
             <div class="user-list" id="adminListContainer"></div>
         </div>
 
-        <div id="dispositivosSection">
+        <!-- Seção de Dispositivos Ativos (Inicia oculta) -->
+        <div id="dispositivosSection" class="hidden">
             <div class="section-title"><i class="fa-solid fa-tv"></i> Dispositivos Ativos</div>
             <div class="user-list" id="userListContainer"></div>
         </div>
 
+        <!-- Seção de Clientes Cadastrados (Inicia oculta) -->
         <div id="clientesSection" class="hidden">
             <div class="section-title"><i class="fa-solid fa-users"></i> Clientes Cadastrados</div>
             <div class="user-list" id="clientesListContainer"></div>
@@ -588,7 +593,6 @@
     const editDnsInput = document.getElementById('editDnsValue');
     const editUserInput = document.getElementById('editUserValue');
     const editPassInput = document.getElementById('editPassValue');
-    // Mapeamento dos novos inputs do nome
     const clienteNomeInput = document.getElementById('clienteNome');
     const editClienteNomeInput = document.getElementById('editClienteNome');
 
@@ -771,7 +775,6 @@
                     toggleAdminsBtn.classList.add('hidden');
                     toggleAdminsBtn.style.setProperty('display', 'none', 'important');
                     adminListSection.classList.add('hidden');
-                    adminListSection.style.setProperty('display', 'none', 'important');
                 }
             }
 
@@ -895,7 +898,7 @@
 
     cadastroForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const nomeValue = clienteNomeInput.value.trim(); // Captura o Nome
+        const nomeValue = clienteNomeInput.value.trim();
         const docId = document.getElementById('docId').value.trim();
         const dnsValue = document.getElementById('dnsValue').value.trim();
         const userValue = document.getElementById('userValue').value.trim();
@@ -904,7 +907,7 @@
         try {
             await setDoc(doc(db, "clientes", docId), {
                 id: docId,
-                nomeCliente: nomeValue, // Salva o nome do Cliente no Firestore
+                nomeCliente: nomeValue,
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
@@ -921,7 +924,7 @@
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const docId = editDocIdInput.value;
-        const nomeValue = editClienteNomeInput.value.trim(); // Captura o Nome Editado
+        const nomeValue = editClienteNomeInput.value.trim();
         const dnsValue = editDnsInput.value.trim();
         const userValue = editUserInput.value.trim();
         const passValue = editPassInput.value.trim();
@@ -929,7 +932,7 @@
         try {
             await setDoc(doc(db, "clientes", docId), {
                 id: docId,
-                nomeCliente: nomeValue, // Atualiza o nome do Cliente no Firestore
+                nomeCliente: nomeValue,
                 dns: dnsValue,
                 username: userValue,
                 password: passValue,
@@ -946,39 +949,30 @@
     // Alternar para visualização de Clientes Cadastrados
     toggleClientesBtn.addEventListener('click', () => {
         const isClientesActive = !clientesSection.classList.contains('hidden');
+        
+        // Fecha todas as outras seções primeiro
+        dispositivosSection.classList.add('hidden');
+        adminListSection.classList.add('hidden');
+
         if (isClientesActive) {
             clientesSection.classList.add('hidden');
-            dispositivosSection.classList.remove('hidden');
-            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-users"></i> CLIENTES`;
         } else {
-            // Se Admins estiver aberto, fecha ele
-            adminListSection.classList.add('hidden');
-            adminListSection.style.setProperty('display', 'none', 'important');
-            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-user-shield"></i> ADMINS`;
-
-            dispositivosSection.classList.add('hidden');
             clientesSection.classList.remove('hidden');
-            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-tv"></i> DISPOSITIVOS`;
         }
     });
 
     // Alternar para visualização de Admins Cadastrados (Apenas Adonias Master)
     toggleAdminsBtn.addEventListener('click', () => {
         const isAdminListActive = !adminListSection.classList.contains('hidden');
+        
+        // Fecha todas as outras seções primeiro
+        dispositivosSection.classList.add('hidden');
+        clientesSection.classList.add('hidden');
+
         if (isAdminListActive) {
             adminListSection.classList.add('hidden');
-            adminListSection.style.setProperty('display', 'none', 'important');
-            dispositivosSection.classList.remove('hidden');
-            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-user-shield"></i> ADMINS`;
         } else {
-            // Se Clientes estiver aberto, fecha ele
-            clientesSection.classList.add('hidden');
-            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-users"></i> CLIENTES`;
-
-            dispositivosSection.classList.add('hidden');
             adminListSection.classList.remove('hidden');
-            adminListSection.style.setProperty('display', 'block', 'important');
-            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-tv"></i> DISPOSITIVOS`;
         }
     });
 
@@ -1044,7 +1038,7 @@
                 clientesListContainer.appendChild(cardCliente);
             });
 
-            // Reatribuir Eventos nos botões editados/excluídos de ambas as listas
+            // Reatribuir Eventos nos botões
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const b = e.currentTarget;
@@ -1071,7 +1065,7 @@
 
     function prepararEdicao(id, nome, dns, user, pass) {
         editDocIdInput.value = id;
-        editClienteNomeInput.value = nome; // preenche o input do nome na edição
+        editClienteNomeInput.value = nome;
         editDnsInput.value = dns;
         editUserInput.value = user;
         editPassInput.value = pass;
