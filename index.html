@@ -337,8 +337,14 @@
                 <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
             <div class="button-group">
+                <button type="button" id="toggleAdminsBtn" class="btn-secondary hidden" style="display: none;">
+                    <i class="fa-solid fa-user-shield"></i> ADMINS
+                </button>
                 <button type="button" id="openAdminModalBtn" class="btn-admin-owner hidden" style="display: none;">
-                    <i class="fa-solid fa-user-shield"></i> CADASTRAR ADMIN
+                    <i class="fa-solid fa-user-plus"></i> NOVO ADMIN
+                </button>
+                <button type="button" id="toggleClientesBtn" class="btn-secondary">
+                    <i class="fa-solid fa-users"></i> CLIENTES
                 </button>
                 <button type="button" id="openCadastroModalBtn">
                     <i class="fa-solid fa-user-plus"></i> CADASTRAR USUÁRIO
@@ -351,8 +357,15 @@
             <div class="user-list" id="adminListContainer"></div>
         </div>
 
-        <div class="section-title"><i class="fa-solid fa-tv"></i> Dispositivos Ativos</div>
-        <div class="user-list" id="userListContainer"></div>
+        <div id="dispositivosSection">
+            <div class="section-title"><i class="fa-solid fa-tv"></i> Dispositivos Ativos</div>
+            <div class="user-list" id="userListContainer"></div>
+        </div>
+
+        <div id="clientesSection" class="hidden">
+            <div class="section-title"><i class="fa-solid fa-users"></i> Clientes Cadastrados</div>
+            <div class="user-list" id="clientesListContainer"></div>
+        </div>
     </div>
 </div>
 
@@ -554,6 +567,15 @@
     const clienteNomeInput = document.getElementById('clienteNome');
     const editClienteNomeInput = document.getElementById('editClienteNome');
 
+    // Elementos da visualização dos Clientes
+    const toggleClientesBtn = document.getElementById('toggleClientesBtn');
+    const dispositivosSection = document.getElementById('dispositivosSection');
+    const clientesSection = document.getElementById('clientesSection');
+    const clientesListContainer = document.getElementById('clientesListContainer');
+
+    // Elementos da visualização dos Admins
+    const toggleAdminsBtn = document.getElementById('toggleAdminsBtn');
+
     let unsubscribeSnapshot = null;
     let unsubscribeAdminSnapshot = null;
     let inactivityTimeout = null;
@@ -704,10 +726,11 @@
             if (emailLimpo !== "") {
                 clearInterval(intervalId);
                 if (emailLimpo === "adonias@gmail.com") {
+                    // Ativa os botões de Admin Master
                     openAdminModalBtn.classList.remove('hidden');
                     openAdminModalBtn.style.setProperty('display', 'flex', 'important');
-                    adminListSection.classList.remove('hidden');
-                    adminListSection.style.setProperty('display', 'block', 'important');
+                    toggleAdminsBtn.classList.remove('hidden');
+                    toggleAdminsBtn.style.setProperty('display', 'flex', 'important');
                     listenToAdmins();
                 } else {
                     const docRef = doc(db, "administradores", user.uid);
@@ -720,6 +743,8 @@
 
                     openAdminModalBtn.classList.add('hidden');
                     openAdminModalBtn.style.setProperty('display', 'none', 'important');
+                    toggleAdminsBtn.classList.add('hidden');
+                    toggleAdminsBtn.style.setProperty('display', 'none', 'important');
                     adminListSection.classList.add('hidden');
                     adminListSection.style.setProperty('display', 'none', 'important');
                 }
@@ -737,8 +762,8 @@
             loginSection.classList.add('hidden');
             painelSection.classList.remove('hidden');
             listenToUsers();
-            gerenciarVisualizacaoAdminMaster(user);
             resetInactivityTimer();
+            gerenciarVisualizacaoAdminMaster(user);
         } else {
             loginSection.classList.remove('hidden');
             painelSection.classList.add('hidden');
@@ -893,26 +918,70 @@
         }
     });
 
+    // Alternar para visualização de Clientes Cadastrados
+    toggleClientesBtn.addEventListener('click', () => {
+        const isClientesActive = !clientesSection.classList.contains('hidden');
+        if (isClientesActive) {
+            clientesSection.classList.add('hidden');
+            dispositivosSection.classList.remove('hidden');
+            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-users"></i> CLIENTES`;
+        } else {
+            // Se Admins estiver aberto, fecha ele
+            adminListSection.classList.add('hidden');
+            adminListSection.style.setProperty('display', 'none', 'important');
+            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-user-shield"></i> ADMINS`;
+
+            dispositivosSection.classList.add('hidden');
+            clientesSection.classList.remove('hidden');
+            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-tv"></i> DISPOSITIVOS`;
+        }
+    });
+
+    // Alternar para visualização de Admins Cadastrados (Apenas Adonias Master)
+    toggleAdminsBtn.addEventListener('click', () => {
+        const isAdminListActive = !adminListSection.classList.contains('hidden');
+        if (isAdminListActive) {
+            adminListSection.classList.add('hidden');
+            adminListSection.style.setProperty('display', 'none', 'important');
+            dispositivosSection.classList.remove('hidden');
+            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-user-shield"></i> ADMINS`;
+        } else {
+            // Se Clientes estiver aberto, fecha ele
+            clientesSection.classList.add('hidden');
+            toggleClientesBtn.innerHTML = `<i class="fa-solid fa-users"></i> CLIENTES`;
+
+            dispositivosSection.classList.add('hidden');
+            adminListSection.classList.remove('hidden');
+            adminListSection.style.setProperty('display', 'block', 'important');
+            toggleAdminsBtn.innerHTML = `<i class="fa-solid fa-tv"></i> DISPOSITIVOS`;
+        }
+    });
+
     function listenToUsers() {
         if (!auth.currentUser) return;
         const q = query(collection(db, "clientes"), where("adminId", "==", auth.currentUser.uid));
 
         unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
             userListContainer.innerHTML = "";
+            clientesListContainer.innerHTML = "";
+            
             if(snapshot.empty) {
-                userListContainer.innerHTML = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Você não possui nenhum dispositivo ativado.</p>`;
+                const noDevicesMsg = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Você não possui nenhum dispositivo ativado.</p>`;
+                const noClientsMsg = `<p style="color: var(--text-muted); font-size:13px; text-align:center; padding: 20px;">Nenhum cliente cadastrado ainda.</p>`;
+                userListContainer.innerHTML = noDevicesMsg;
+                clientesListContainer.innerHTML = noClientsMsg;
                 return;
             }
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const card = document.createElement('div');
-                card.className = "user-card";
                 
-                // Exibe o Nome do Cliente em destaque se ele existir no banco
+                // 1. Renderizar card de Dispositivos Ativos
+                const cardDispositivo = document.createElement('div');
+                cardDispositivo.className = "user-card";
                 const exibicaoNome = data.nomeCliente ? `<div style="font-size: 15px; font-weight: bold; color: #ffffff; margin-bottom: 2px;"><i class="fa-solid fa-user"></i> ${data.nomeCliente}</div>` : '';
-
-                card.innerHTML = `
+                
+                cardDispositivo.innerHTML = `
                     <div class="user-info">
                         ${exibicaoNome}
                         <span class="user-id"><i class="fa-solid fa-tv"></i> ID: ${data.id}</span>
@@ -928,15 +997,35 @@
                         </button>
                     </div>
                 `;
-                userListContainer.appendChild(card);
+                userListContainer.appendChild(cardDispositivo);
+
+                // 2. Renderizar card na Nova Lista de Clientes Cadastrados
+                const cardCliente = document.createElement('div');
+                cardCliente.className = "user-card";
+                cardCliente.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-id" style="font-size: 15px; font-weight: 800; color: #10b981;">
+                            <i class="fa-solid fa-user-check"></i> ${data.nomeCliente || 'Sem Nome Cadastrado'}
+                        </span>
+                        <span class="user-details">Aparelho Vinculado: ID ${data.id}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-icon btn-edit" title="Editar dados" 
+                                data-id="${data.id}" data-nome="${data.nomeCliente || ''}" data-dns="${data.dns || ''}" data-user="${data.username || ''}" data-pass="${data.password || ''}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                `;
+                clientesListContainer.appendChild(cardCliente);
             });
 
-            userListContainer.querySelectorAll('.btn-edit').forEach(btn => {
+            // Reatribuir Eventos nos botões editados/excluídos de ambas as listas
+            document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const b = e.currentTarget;
                     prepararEdicao(
                         b.getAttribute('data-id'), 
-                        b.getAttribute('data-nome'), // Passa o parâmetro do nome para a edição
+                        b.getAttribute('data-nome'), 
                         b.getAttribute('data-dns'), 
                         b.getAttribute('data-user'), 
                         b.getAttribute('data-pass')
@@ -944,7 +1033,7 @@
                 });
             });
 
-            userListContainer.querySelectorAll('.btn-delete').forEach(btn => {
+            document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.currentTarget.getAttribute('data-id');
                     if(confirm(`Deseja mesmo remover o acesso do ID ${id}?`)) {
